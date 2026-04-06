@@ -1,15 +1,36 @@
 // =====================================================
-// app.js — Lógica principal del torneo Dota 2
+// app.js — Lógica principal del torneo Dota 2 con Firebase Modular
 // =====================================================
+
+// Importaciones de Firebase Modular (CDN)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+// Tu configuración de Firebase proporcionada
+const firebaseConfig = {
+  apiKey: "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
+  authDomain: "torneo-de-dotita.firebaseapp.com",
+  projectId: "torneo-de-dotita",
+  storageBucket: "torneo-de-dotita.firebasestorage.app",
+  messagingSenderId: "958554768082",
+  appId: "1:958554768082:web:fb613bce7b756bdd7da30b",
+  measurementId: "G-RTVLG14J1Q"
+};
 
 const WHATSAPP_URL = "https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t";
 const MAX_TEAMS = 16;
-const COLLECTION = "equipos"; // Nombre de la colección en Firestore
+const COLLECTION_NAME = "equipos"; // Nombre de la colección en Firestore
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // ─── PARTICLES BACKGROUND ─────────────────────────────────────────────────────
 (function initParticles() {
   const canvas = document.getElementById("particles");
   const ctx    = canvas.getContext("2d");
+  if (!canvas) return; // Seguridad
+
   let particles = [];
   const COLORS  = ["rgba(184,24,26,0.6)", "rgba(212,160,23,0.5)", "rgba(240,192,64,0.3)"];
 
@@ -57,54 +78,61 @@ const COLLECTION = "equipos"; // Nombre de la colección en Firestore
 // ─── NAVBAR SCROLL EFFECT ─────────────────────────────────────────────────────
 window.addEventListener("scroll", () => {
   const nav = document.querySelector(".navbar");
+  if (!nav) return;
   nav.style.boxShadow = window.scrollY > 50
     ? "0 4px 24px rgba(0,0,0,0.7)"
     : "none";
 });
 
 
-// ─── CONTADOR DE EQUIPOS (Firestore en tiempo real) ──────────────────────────
+// ─── CONTADOR DE EQUIPOS (Actualizar UI) ──────────────────────────────────────
 function updateStats(count) {
   const libre = Math.max(0, MAX_TEAMS - count);
-  document.getElementById("totalEquipos").textContent = count;
-  document.getElementById("cuposLibres").textContent  = libre;
+  const totalEl = document.getElementById("totalEquipos");
+  const libreEl = document.getElementById("cuposLibres");
+  if (totalEl) totalEl.textContent = count;
+  if (libreEl) libreEl.textContent = libre;
 }
 
 
-// ─── CARGAR EQUIPOS ───────────────────────────────────────────────────────────
+// ─── CARGAR EQUIPOS (Escucha en tiempo real modular) ─────────────────────────
 function loadTeams() {
   const container = document.getElementById("teamsContainer");
+  if (!container) return;
+
+  const teamsRef = collection(db, COLLECTION_NAME);
+  // Consulta ordenada por timestamp ascendente
+  const q = query(teamsRef, orderBy("timestamp", "asc"));
 
   // Escuchar en tiempo real
-  db.collection(COLLECTION)
-    .orderBy("timestamp", "asc")
-    .onSnapshot(snapshot => {
-      updateStats(snapshot.size);
+  onSnapshot(q, (snapshot) => {
+    updateStats(snapshot.size);
 
-      if (snapshot.empty) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <span class="empty-icon">⚔</span>
-            <p>Aún no hay equipos inscritos.</p>
-            <p>¡Sé el primero en registrarte!</p>
-          </div>`;
-        return;
-      }
-
-      container.innerHTML = "";
-      let idx = 1;
-      snapshot.forEach(doc => {
-        const d = doc.data();
-        container.appendChild(createTeamCard(d, idx++));
-      });
-    }, err => {
-      console.error("Error cargando equipos:", err);
+    if (snapshot.empty) {
       container.innerHTML = `
         <div class="empty-state">
-          <span class="empty-icon">⚠️</span>
-          <p>Error al cargar equipos. Revisa la configuración de Firebase.</p>
+          <span class="empty-icon">⚔</span>
+          <p>Aún no hay equipos inscritos.</p>
+          <p>¡Sé el primero en registrarte!</p>
         </div>`;
+      return;
+    }
+
+    container.innerHTML = "";
+    let idx = 1;
+    snapshot.forEach((doc) => {
+      const d = doc.data();
+      container.appendChild(createTeamCard(d, idx++));
     });
+  }, (err) => {
+    console.error("Error cargando equipos:", err);
+    container.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">⚠️</span>
+        <p>Error al cargar equipos. Revisa la configuración y reglas de Firestore en la consola de Firebase.</p>
+        <p style="font-size:0.8rem;color:red;">Detalle: ${err.message}</p>
+      </div>`;
+  });
 }
 
 
@@ -118,8 +146,9 @@ function createTeamCard(data, num) {
     ? data.teamName.substring(0, 2).toUpperCase()
     : "??";
 
-  // Jugadores como tags
-  const playerTags = (data.players || [])
+  // Jugadores como tags (seguridad ante nulos)
+  const playersArray = Array.isArray(data.players) ? data.players : [];
+  const playerTags = playersArray
     .map(p => `<span class="player-tag">⚔ ${escapeHtml(p)}</span>`)
     .join("");
 
@@ -141,7 +170,8 @@ function createTeamCard(data, num) {
 function clearErrors() {
   document.querySelectorAll(".error-msg").forEach(el => el.textContent = "");
   document.querySelectorAll(".error-field").forEach(el => el.classList.remove("error-field"));
-  document.getElementById("formError").style.display = "none";
+  const formError = document.getElementById("formError");
+  if (formError) formError.style.display = "none";
 }
 
 function setError(fieldId, errId, msg) {
@@ -155,9 +185,14 @@ function validateForm() {
   clearErrors();
   let valid = true;
 
-  const teamName = document.getElementById("teamName").value.trim();
-  const captain  = document.getElementById("captain").value.trim();
-  const contact  = document.getElementById("contact").value.trim();
+  const teamNameInput = document.getElementById("teamName");
+  const captainInput = document.getElementById("captain");
+  const contactInput = document.getElementById("contact");
+  if (!teamNameInput || !captainInput || !contactInput) return null; // Error fatal de estructura
+
+  const teamName = teamNameInput.value.trim();
+  const captain  = captainInput.value.trim();
+  const contact  = contactInput.value.trim();
   const players  = Array.from(document.querySelectorAll(".player-input"))
                         .map(i => i.value.trim());
 
@@ -178,11 +213,12 @@ function validateForm() {
   }
 
   // Validar los 5 jugadores
+  const playerInputs = document.querySelectorAll(".player-input");
   players.forEach((p, i) => {
     if (!p) {
-      const playerInputs = document.querySelectorAll(".player-input");
-      playerInputs[i].classList.add("error-field");
-      document.getElementById(`err-p${i}`).textContent = "Campo requerido.";
+      if (playerInputs[i]) playerInputs[i].classList.add("error-field");
+      const errP = document.getElementById(`err-p${i}`);
+      if (errP) errP.textContent = "Campo requerido.";
       valid = false;
     }
   });
@@ -193,73 +229,100 @@ function validateForm() {
 }
 
 
-// ─── SUBMIT FORMULARIO ────────────────────────────────────────────────────────
-document.getElementById("registroForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+// ─── SUBMIT FORMULARIO (Sintaxis Modular) ─────────────────────────────────────
+const registroForm = document.getElementById("registroForm");
+if (registroForm) {
+  registroForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const data = validateForm();
-  if (!data) return;
+    const data = validateForm();
+    if (!data) return;
 
-  // Verificar cupos disponibles
-  const snap = await db.collection(COLLECTION).get();
-  if (snap.size >= MAX_TEAMS) {
-    const errEl = document.getElementById("formError");
-    errEl.textContent = "⚠ Lo sentimos, todos los cupos están llenos.";
-    errEl.style.display = "block";
-    return;
+    // Referencias de UI
+    const btnText = document.getElementById("btnText");
+    const btnLoader = document.getElementById("btnLoader");
+    const submitBtn = document.getElementById("submitBtn");
+    const formErrorEl = document.getElementById("formError");
+
+    // Verificar cupos disponibles (consulta rapida)
+    const teamsRef = collection(db, COLLECTION_NAME);
+    let totalInscritos = 0;
+    try {
+      const snapTotal = await getDocs(teamsRef);
+      totalInscritos = snapTotal.size;
+    } catch (e) {
+      console.error("Error verificando cupos:", e);
+    }
+
+    if (totalInscritos >= MAX_TEAMS) {
+      if (formErrorEl) {
+        formErrorEl.textContent = "⚠ Lo sentimos, todos los cupos están llenos.";
+        formErrorEl.style.display = "block";
+      }
+      return;
+    }
+
+    // Verificar que el nombre no esté repetido
+    const qDup = query(teamsRef, where("teamName", "==", data.teamName));
+    try {
+      const dupSnap = await getDocs(qDup);
+      if (!dupSnap.empty) {
+        setError("teamName", "err-teamName", "Ya existe un equipo con ese nombre.");
+        return;
+      }
+    } catch (e) {
+      console.error("Error verificando duplicados:", e);
+    }
+
+    // Mostrar loader
+    if (btnText) btnText.style.display   = "none";
+    if (btnLoader) btnLoader.style.display = "inline";
+    if (submitBtn) submitBtn.disabled      = true;
+
+    // Suplentes
+    const subs = Array.from(document.querySelectorAll(".sub-input"))
+                      .map(i => i.value.trim())
+                      .filter(Boolean);
+
+    try {
+      // Guardar en Firestore Modular
+      await addDoc(teamsRef, {
+        teamName:  data.teamName,
+        captain:   data.captain,
+        contact:   data.contact,
+        players:   data.players,
+        subs:      subs,
+        timestamp: serverTimestamp() // Tiempo del servidor
+      });
+
+      // Mostrar éxito
+      if (registroForm) registroForm.style.display = "none";
+      const formSuccess = document.getElementById("formSuccess");
+      if (formSuccess) formSuccess.style.display  = "block";
+
+    } catch (err) {
+      console.error("Error al guardar:", err);
+      if (formErrorEl) {
+        formErrorEl.innerHTML = `❌ Error al guardar. Revisa la conexión y la configuración/reglas de Firestore.<br><span style="font-size:0.8rem">Detalle: ${err.message}</span>`;
+        formErrorEl.style.display = "block";
+      }
+    } finally {
+      if (btnText) btnText.style.display   = "inline";
+      if (btnLoader) btnLoader.style.display = "none";
+      if (submitBtn) submitBtn.disabled      = false;
+    }
+  });
+}
+
+// Exponer resetForm globalmente porque se llama desde un onclick HTML
+window.resetForm = function resetForm() {
+  const registroForm = document.getElementById("registroForm");
+  const formSuccess = document.getElementById("formSuccess");
+  if (registroForm) {
+    registroForm.reset();
+    registroForm.style.display = "block";
   }
-
-  // Verificar que el nombre no esté repetido
-  const dup = await db.collection(COLLECTION)
-    .where("teamName", "==", data.teamName)
-    .get();
-  if (!dup.empty) {
-    setError("teamName", "err-teamName", "Ya existe un equipo con ese nombre.");
-    return;
-  }
-
-  // Mostrar loader
-  document.getElementById("btnText").style.display   = "none";
-  document.getElementById("btnLoader").style.display = "inline";
-  document.getElementById("submitBtn").disabled      = true;
-
-  // Suplentes
-  const subs = Array.from(document.querySelectorAll(".sub-input"))
-                    .map(i => i.value.trim())
-                    .filter(Boolean);
-
-  try {
-    await db.collection(COLLECTION).add({
-      teamName:  data.teamName,
-      captain:   data.captain,
-      contact:   data.contact,
-      players:   data.players,
-      subs:      subs,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // Mostrar éxito
-    document.getElementById("registroForm").style.display = "none";
-    document.getElementById("formSuccess").style.display  = "block";
-
-  } catch (err) {
-    console.error("Error al guardar:", err);
-    const errEl = document.getElementById("formError");
-    errEl.textContent = "❌ Error al guardar. Revisa la conexión y la configuración de Firebase.";
-    errEl.style.display = "block";
-  } finally {
-    document.getElementById("btnText").style.display   = "inline";
-    document.getElementById("btnLoader").style.display = "none";
-    document.getElementById("submitBtn").disabled      = false;
-  }
-});
-
-
-// ─── RESETEAR FORMULARIO ──────────────────────────────────────────────────────
-function resetForm() {
-  document.getElementById("registroForm").reset();
-  document.getElementById("registroForm").style.display = "block";
-  document.getElementById("formSuccess").style.display  = "none";
+  if (formSuccess) formSuccess.style.display  = "none";
   clearErrors();
 }
 
@@ -271,7 +334,8 @@ function escapeHtml(str) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;"); // Tambien escapar comillas simples
 }
 
 
