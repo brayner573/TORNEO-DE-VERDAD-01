@@ -11,12 +11,13 @@
 // =====================================================
 
 const firebaseConfig = {
-  apiKey:            "TU_API_KEY_AQUI",
-  authDomain:        "TU_PROYECTO.firebaseapp.com",
-  projectId:         "TU_PROYECTO_ID",
-  storageBucket:     "TU_PROYECTO.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId:             "TU_APP_ID"
+  apiKey: "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
+  authDomain: "torneo-de-dotita.firebaseapp.com",
+  projectId: "torneo-de-dotita",
+  storageBucket: "torneo-de-dotita.firebasestorage.app",
+  messagingSenderId: "958554768082",
+  appId: "1:958554768082:web:fb613bce7b756bdd7da30b",
+  measurementId: "G-RTVLG14J1Q"
 };
 
 // Inicializar Firebase
