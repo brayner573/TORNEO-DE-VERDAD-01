@@ -5,22 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DOTA 2 TOURNAMENT – La Batalla Final</title>
 
-  <!-- Google Fonts: Bebas Neue (display) + Rajdhani (body) -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
-  <!-- Firebase SDK (v9 compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-  <!-- ========== PARTICLES BACKGROUND ========== -->
   <canvas id="particles"></canvas>
 
-  <!-- ========== NAVBAR ========== -->
   <nav class="navbar">
     <div class="nav-logo">⚔ DOTA 2 OPEN</div>
     <ul class="nav-links">
@@ -35,7 +30,6 @@
     </a>
   </nav>
 
-  <!-- ========== HERO / BANNER ========== -->
   <section class="hero" id="inicio">
     <div class="hero-glow"></div>
     <div class="hero-content">
@@ -46,7 +40,6 @@
       </h1>
       <p class="hero-subtitle">El torneo más épico de Dota 2 está aquí.<br/>¿Tienes lo que se necesita para conquistar el trono?</p>
 
-      <!-- Contador de equipos -->
       <div class="hero-stats">
         <div class="stat-box">
           <span class="stat-number" id="totalEquipos">0</span>
@@ -70,19 +63,16 @@
       </div>
     </div>
 
-    <!-- Decoración lateral -->
     <div class="hero-deco left">⬡</div>
     <div class="hero-deco right">⬡</div>
   </section>
 
-  <!-- ========== PREMIOS ========== -->
   <section class="section" id="premios">
     <div class="container">
       <h2 class="section-title">🏆 Premios</h2>
       <p class="section-sub">Los mejores del torneo se llevan la gloria</p>
 
       <div class="prizes-grid">
-        <!-- 2do lugar -->
         <div class="prize-card silver">
           <div class="prize-pos">2°</div>
           <div class="prize-icon">🥈</div>
@@ -90,7 +80,6 @@
           <div class="prize-amount">Premio especial</div>
           <div class="prize-detail">Reconocimiento + Medallas</div>
         </div>
-        <!-- 1er lugar (centro) -->
         <div class="prize-card gold featured">
           <div class="prize-crown">👑</div>
           <div class="prize-pos">1°</div>
@@ -99,7 +88,6 @@
           <div class="prize-amount">Gran Premio</div>
           <div class="prize-detail">Trofeo + Reconocimiento oficial</div>
         </div>
-        <!-- 3er lugar -->
         <div class="prize-card bronze">
           <div class="prize-pos">3°</div>
           <div class="prize-icon">🥉</div>
@@ -111,7 +99,6 @@
     </div>
   </section>
 
-  <!-- ========== REGLAS ========== -->
   <section class="section dark" id="reglas">
     <div class="container">
       <h2 class="section-title">📜 Reglas del Torneo</h2>
@@ -152,7 +139,6 @@
     </div>
   </section>
 
-  <!-- ========== FORMULARIO DE REGISTRO ========== -->
   <section class="section" id="registro">
     <div class="container">
       <h2 class="section-title">⚔ Registrar Equipo</h2>
@@ -170,30 +156,25 @@
           <button onclick="resetForm()" class="btn-secondary">Registrar otro equipo</button>
         </div>
 
-        <!-- Formulario principal -->
         <form id="registroForm" novalidate>
-          <!-- Nombre del equipo -->
           <div class="form-group">
             <label for="teamName">🛡 Nombre del Equipo *</label>
             <input type="text" id="teamName" placeholder="Ej: Equipo Fenix" maxlength="40"/>
             <span class="error-msg" id="err-teamName"></span>
           </div>
 
-          <!-- Capitán -->
           <div class="form-group">
             <label for="captain">👑 Nombre del Capitán *</label>
             <input type="text" id="captain" placeholder="Ej: Invoker99" maxlength="30"/>
             <span class="error-msg" id="err-captain"></span>
           </div>
 
-          <!-- Contacto -->
           <div class="form-group">
             <label for="contact">📱 WhatsApp del Capitán *</label>
             <input type="tel" id="contact" placeholder="Ej: +51 999 999 999"/>
             <span class="error-msg" id="err-contact"></span>
           </div>
 
-          <!-- Jugadores -->
           <div class="form-group">
             <label>⚔ Jugadores (5 titulares) *</label>
             <div class="players-grid">
@@ -220,7 +201,6 @@
             </div>
           </div>
 
-          <!-- Suplentes (opcional) -->
           <div class="form-group">
             <label>🔄 Suplentes (opcional, máx. 2)</label>
             <div class="players-grid two-col">
@@ -240,7 +220,6 @@
     </div>
   </section>
 
-  <!-- ========== LISTA DE EQUIPOS ========== -->
   <section class="section dark" id="equipos">
     <div class="container">
       <h2 class="section-title">🛡 Equipos Inscritos</h2>
@@ -252,11 +231,20 @@
     </div>
   </section>
 
-  <!-- ========== FOOTER ========== -->
   <footer class="footer">
     <div class="footer-content">
       <p class="footer-logo">⚔ DOTA 2 OPEN</p>
       <p class="footer-sub">Torneo organizado con pasión por la comunidad</p>
+      
+      <div class="footer-socials">
+        <a href="https://tiktok.com/@brayner722" target="_blank" class="social-btn tiktok">
+          <i class="fab fa-tiktok"></i> TikTok
+        </a>
+        <a href="https://kick.com/brayner45" target="_blank" class="social-btn kick">
+          <i class="fas fa-play-circle"></i> Kick
+        </a>
+      </div>
+
       <a href="https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t"
          target="_blank" class="btn-whatsapp">
         📲 Unirse al Grupo WhatsApp
@@ -265,7 +253,6 @@
     </div>
   </footer>
 
-  <script src="firebase-config.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
