@@ -612,6 +612,48 @@ img { max-width: 100%; }
 .footer-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
 .footer-copy { color: rgba(122,122,154,0.5); font-size: 0.8rem; margin-top: 1.5rem; }
 
+/* Estilos para Redes Sociales en Footer */
+.footer-socials {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--trans);
+  color: #fff;
+}
+.social-btn i { font-size: 1.1rem; }
+
+.social-btn.tiktok {
+  background: #000000;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.social-btn.tiktok:hover {
+  background: #25F4EE;
+  color: #000;
+  border-color: #25F4EE;
+  transform: translateY(-2px);
+}
+
+.social-btn.kick {
+  background: #53FC18;
+  color: #000;
+}
+.social-btn.kick:hover {
+  background: #45d612;
+  transform: translateY(-2px);
+}
+
+
 /* ===== ANIMATIONS ===== */
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-20px); }
