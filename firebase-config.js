@@ -20,8 +20,5 @@ const firebaseConfig = {
   measurementId: "G-RTVLG14J1Q"
 };
 
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-
-// Exportar referencia a Firestore
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
