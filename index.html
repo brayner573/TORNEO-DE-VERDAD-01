@@ -22,7 +22,7 @@
         <button type="button" class="auth-tab" id="tabRegister" onclick="switchTab('register')">Registrarse</button>
       </div>
 
-      <form id="panelLogin" class="auth-panel" onsubmit="event.preventDefault(); handleLogin();">
+      <form id="panelLogin" class="auth-panel">
         <div class="form-group">
           <label>📧 Correo electrónico</label>
           <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email" required/>
@@ -39,10 +39,10 @@
           <span id="loginBtnText">⚔ Ingresar</span>
           <span id="loginBtnLoader" style="display:none;">⏳ Ingresando...</span>
         </button>
-        <p class="auth-switch">¿No tienes cuenta? <a onclick="switchTab('register')">Regístrate aquí</a></p>
+        <p class="auth-switch">¿No tienes cuenta? <a style="cursor:pointer;" onclick="switchTab('register')">Regístrate aquí</a></p>
       </form>
 
-      <form id="panelRegister" class="auth-panel" style="display:none;" onsubmit="event.preventDefault(); handleRegister();">
+      <form id="panelRegister" class="auth-panel" style="display:none;">
         <div class="form-group">
           <label>👤 Nombre de usuario</label>
           <input type="text" id="regName" placeholder="Tu nombre o apodo" maxlength="30" required/>
@@ -64,7 +64,7 @@
           <span id="registerBtnText">🛡 Crear Cuenta</span>
           <span id="registerBtnLoader" style="display:none;">⏳ Creando...</span>
         </button>
-        <p class="auth-switch">¿Ya tienes cuenta? <a onclick="switchTab('login')">Inicia sesión</a></p>
+        <p class="auth-switch">¿Ya tienes cuenta? <a style="cursor:pointer;" onclick="switchTab('login')">Inicia sesión</a></p>
       </form>
 
     </div>
@@ -83,7 +83,7 @@
       <div id="userStatus" class="user-status" style="display:none;">
         <span class="user-avatar" id="userAvatar">?</span>
         <span class="user-name" id="userName">Usuario</span>
-        <button class="btn-logout" onclick="handleLogout()">Salir</button>
+        <button class="btn-logout">Salir</button>
       </div>
       <a class="nav-whatsapp" href="https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t" target="_blank">
         📲 WhatsApp
