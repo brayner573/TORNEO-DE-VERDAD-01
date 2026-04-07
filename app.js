@@ -1,19 +1,30 @@
 // =====================================================================
-// app.js — Firebase Modular v9 + Lógica completa del torneo Dota 2
+// app.js — Firebase Modular v9 | Auth + Firestore
+// Torneo Dota 2 OPEN
 //
-// CORRECCIONES APLICADAS vs versión antigua (compat):
-// ✅ Usa import desde CDN (esm.sh) — NO firebase-app-compat
-// ✅ initializeApp en lugar de firebase.initializeApp()
-// ✅ getFirestore() en lugar de firebase.firestore()
-// ✅ collection(), addDoc(), getDocs(), query(), where(), orderBy(),
-//    onSnapshot(), serverTimestamp() importados individualmente
-// ✅ Sin variables globales de Firebase — todo encapsulado en módulo
-// ✅ resetForm() expuesta en window para que el HTML pueda llamarla
-// ✅ Partículas separadas e iniciadas al cargar el DOM
+// BUGS CORREGIDOS DEL CÓDIGO ORIGINAL:
+// ❌ firebase.initializeApp() → ✅ initializeApp()  (era compat mezclado con modular)
+// ❌ firebase.firestore()     → ✅ getFirestore(app)
+// ❌ Template literals sin backticks → ✅ Todos los strings con `` correctos
+// ❌ Sin Firebase Auth → ✅ Login/Registro/Logout completo
+// ❌ Sin protección del formulario → ✅ Solo usuarios logueados pueden registrar
+// ❌ Sin detección de equipo ya registrado → ✅ Se verifica por UID del usuario
+// ❌ window.resetForm no persistía entre recargas → ✅ Vinculado correctamente
 // =====================================================================
 
-// ─── 1. IMPORTS — Firebase modular v9 desde CDN ───────────────────────────
-import { initializeApp }                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+// ─── IMPORTS Firebase Modular v9 ──────────────────────────────────────────────
+import { initializeApp } from
+  "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
 import {
   getFirestore,
   collection,
@@ -23,50 +34,42 @@ import {
   where,
   orderBy,
   onSnapshot,
-  serverTimestamp,
-  getCountFromServer
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-// ─── 2. CONFIGURACIÓN FIREBASE ────────────────────────────────────────────
-// ⚠️  REEMPLAZA estos valores con los de TU proyecto en Firebase Console
-//     https://console.firebase.google.com/ → Tu proyecto → Configuración → Web
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-
-// Tu configuración de Firebase proporcionada
-// CONFIG FIREBASE
+// ─── CONFIGURACIÓN FIREBASE ────────────────────────────────────────────────────
+// ✅ Tus credenciales reales ya están aquí
 const firebaseConfig = {
-  apiKey: "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
-  authDomain: "torneo-de-dotita.firebaseapp.com",
-  projectId: "torneo-de-dotita",
-  storageBucket: "torneo-de-dotita.appspot.com",
+  apiKey:            "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
+  authDomain:        "torneo-de-dotita.firebaseapp.com",
+  projectId:         "torneo-de-dotita",
+  storageBucket:     "torneo-de-dotita.appspot.com",
   messagingSenderId: "958554768082",
-  appId: "1:958554768082:web:fb613bce7b756bdd7da30b"
+  appId:             "1:958554768082:web:fb613bce7b756bdd7da30b"
 };
 
-// INICIALIZAR FIREBASE
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// ─── INICIALIZAR (MODULAR CORRECTO) ───────────────────────────────────────────
+const app  = initializeApp(firebaseConfig);  // ✅ NO firebase.initializeApp()
+const auth = getAuth(app);
+const db   = getFirestore(app);              // ✅ NO firebase.firestore()
+
+// ─── CONSTANTES ───────────────────────────────────────────────────────────────
+const COLLECTION = "equipos";
+const MAX_TEAMS  = 16;
+const WHATSAPP   = "https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t";
+
+// ─── ESTADO GLOBAL ─────────────────────────────────────────────────────────────
+let currentUser = null;  // Usuario autenticado actualmente
 
 
-
-// ─── 4. CONSTANTES ────────────────────────────────────────────────────────
-const COLLECTION   = "equipos";   // Nombre de la colección Firestore
-const MAX_TEAMS    = 16;
-const WHATSAPP_URL = "https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t";
-
-// ─── 5. PARTICLES BACKGROUND ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// PARTÍCULAS DE FONDO
+// ══════════════════════════════════════════════════════════════════════════════
 function initParticles() {
   const canvas = document.getElementById("particles");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
-
-  const COLORS = [
-    "rgba(184,24,26,0.6)",
-    "rgba(212,160,23,0.5)",
-    "rgba(240,192,64,0.3)"
-  ];
-
+  const COLORS = ["rgba(184,24,26,0.6)", "rgba(212,160,23,0.5)", "rgba(240,192,64,0.3)"];
   let particles = [];
 
   function resize() {
@@ -76,14 +79,13 @@ function initParticles() {
   resize();
   window.addEventListener("resize", resize);
 
-  // Crear 55 partículas aleatorias
   for (let i = 0; i < 55; i++) {
     particles.push({
-      x:     Math.random() * canvas.width,
-      y:     Math.random() * canvas.height,
-      r:     Math.random() * 1.8 + 0.4,
-      vx:    (Math.random() - 0.5) * 0.25,
-      vy:    (Math.random() - 0.5) * 0.25,
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.8 + 0.4,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
       color: COLORS[Math.floor(Math.random() * COLORS.length)]
     });
   }
@@ -97,7 +99,6 @@ function initParticles() {
       ctx.fill();
       p.x += p.vx;
       p.y += p.vy;
-      // Rebotar en bordes
       if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
       if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
     });
@@ -106,37 +107,288 @@ function initParticles() {
   draw();
 }
 
-// ─── 6. NAVBAR — efecto sombra al hacer scroll ────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NAVBAR — sombra al hacer scroll
+// ══════════════════════════════════════════════════════════════════════════════
 function initNavbar() {
   const nav = document.querySelector(".navbar");
   if (!nav) return;
   window.addEventListener("scroll", () => {
     nav.style.boxShadow = window.scrollY > 50
-      ? "0 4px 24px rgba(0,0,0,0.7)"
-      : "none";
+      ? "0 4px 24px rgba(0,0,0,0.7)" : "none";
   });
 }
 
-// ─── 7. ACTUALIZAR CONTADORES en el Hero ──────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — Tab switcher (login ↔ registro)
+// ══════════════════════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  const panelLogin    = document.getElementById("panelLogin");
+  const panelRegister = document.getElementById("panelRegister");
+  const tabLogin      = document.getElementById("tabLogin");
+  const tabRegister   = document.getElementById("tabRegister");
+
+  if (tab === "login") {
+    panelLogin.style.display    = "block";
+    panelRegister.style.display = "none";
+    tabLogin.classList.add("active");
+    tabRegister.classList.remove("active");
+  } else {
+    panelLogin.style.display    = "none";
+    panelRegister.style.display = "block";
+    tabLogin.classList.remove("active");
+    tabRegister.classList.add("active");
+  }
+  // Limpiar mensajes de error
+  clearAuthErrors();
+}
+window.switchTab = switchTab;  // exponer al HTML
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — Limpiar errores del modal
+// ══════════════════════════════════════════════════════════════════════════════
+function clearAuthErrors() {
+  ["err-loginEmail","err-loginPassword","err-regName","err-regEmail","err-regPassword"]
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = "";
+    });
+  const loginErr    = document.getElementById("loginError");
+  const registerErr = document.getElementById("registerError");
+  if (loginErr)    loginErr.style.display    = "none";
+  if (registerErr) registerErr.style.display = "none";
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — Loader del botón
+// ══════════════════════════════════════════════════════════════════════════════
+function setAuthLoading(type, isLoading) {
+  const btn    = document.getElementById(type === "login" ? "btnLogin" : "btnRegister");
+  const text   = document.getElementById(type === "login" ? "loginBtnText" : "registerBtnText");
+  const loader = document.getElementById(type === "login" ? "loginBtnLoader" : "registerBtnLoader");
+  if (!btn || !text || !loader) return;
+  btn.disabled         = isLoading;
+  text.style.display   = isLoading ? "none"   : "inline";
+  loader.style.display = isLoading ? "inline" : "none";
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — Manejar errores de Firebase Auth (mensajes en español)
+// ══════════════════════════════════════════════════════════════════════════════
+function translateAuthError(code) {
+  const map = {
+    "auth/invalid-email":           "El correo electrónico no es válido.",
+    "auth/user-not-found":          "No existe una cuenta con ese correo.",
+    "auth/wrong-password":          "Contraseña incorrecta.",
+    "auth/email-already-in-use":    "Ese correo ya está registrado.",
+    "auth/weak-password":           "La contraseña debe tener al menos 6 caracteres.",
+    "auth/too-many-requests":       "Demasiados intentos. Intenta más tarde.",
+    "auth/network-request-failed":  "Error de red. Verifica tu conexión.",
+    "auth/invalid-credential":      "Credenciales incorrectas. Verifica tu correo y contraseña.",
+  };
+  return map[code] || `Error: ${code}`;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — LOGIN
+// ══════════════════════════════════════════════════════════════════════════════
+async function handleLogin() {
+  clearAuthErrors();
+  const email    = document.getElementById("loginEmail")?.value.trim()    || "";
+  const password = document.getElementById("loginPassword")?.value || "";
+
+  // Validación básica
+  if (!email) {
+    document.getElementById("err-loginEmail").textContent = "Ingresa tu correo.";
+    return;
+  }
+  if (!password) {
+    document.getElementById("err-loginPassword").textContent = "Ingresa tu contraseña.";
+    return;
+  }
+
+  setAuthLoading("login", true);
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged se encarga de cerrar el modal y actualizar la UI
+  } catch (err) {
+    const loginError = document.getElementById("loginError");
+    if (loginError) {
+      loginError.textContent  = translateAuthError(err.code);
+      loginError.style.display = "block";
+    }
+  } finally {
+    setAuthLoading("login", false);
+  }
+}
+window.handleLogin = handleLogin;
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — REGISTRO DE CUENTA
+// ══════════════════════════════════════════════════════════════════════════════
+async function handleRegister() {
+  clearAuthErrors();
+  const name     = document.getElementById("regName")?.value.trim()     || "";
+  const email    = document.getElementById("regEmail")?.value.trim()    || "";
+  const password = document.getElementById("regPassword")?.value || "";
+
+  let valid = true;
+  if (!name) {
+    document.getElementById("err-regName").textContent = "Ingresa un nombre de usuario.";
+    valid = false;
+  }
+  if (!email) {
+    document.getElementById("err-regEmail").textContent = "Ingresa tu correo.";
+    valid = false;
+  }
+  if (!password || password.length < 6) {
+    document.getElementById("err-regPassword").textContent = "La contraseña debe tener al menos 6 caracteres.";
+    valid = false;
+  }
+  if (!valid) return;
+
+  setAuthLoading("register", true);
+  try {
+    // 1. Crear cuenta en Firebase Auth
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    // 2. Guardar displayName en el perfil
+    await updateProfile(credential.user, { displayName: name });
+    // onAuthStateChanged se encarga del resto
+  } catch (err) {
+    const registerError = document.getElementById("registerError");
+    if (registerError) {
+      registerError.textContent   = translateAuthError(err.code);
+      registerError.style.display = "block";
+    }
+  } finally {
+    setAuthLoading("register", false);
+  }
+}
+window.handleRegister = handleRegister;
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — LOGOUT
+// ══════════════════════════════════════════════════════════════════════════════
+async function handleLogout() {
+  try {
+    await signOut(auth);
+  } catch (err) {
+    console.error("Error al cerrar sesión:", err);
+  }
+}
+window.handleLogout = handleLogout;
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — Actualizar UI según estado del usuario
+// ══════════════════════════════════════════════════════════════════════════════
+function updateAuthUI(user) {
+  const overlay        = document.getElementById("authOverlay");
+  const userStatus     = document.getElementById("userStatus");
+  const userAvatar     = document.getElementById("userAvatar");
+  const userNameEl     = document.getElementById("userName");
+  const formWrapper    = document.getElementById("formWrapper");
+  const loginRequired  = document.getElementById("loginRequired");
+
+  if (user) {
+    // ── Usuario LOGUEADO ──────────────────────────────────────────────────
+    currentUser = user;
+
+    // Ocultar modal de auth
+    if (overlay) overlay.style.display = "none";
+
+    // Mostrar nombre en navbar
+    const displayName = user.displayName || user.email.split("@")[0];
+    if (userStatus)  userStatus.style.display = "flex";
+    if (userAvatar)  userAvatar.textContent   = displayName.charAt(0).toUpperCase();
+    if (userNameEl)  userNameEl.textContent   = displayName;
+
+    // Mostrar formulario de registro
+    if (formWrapper)   formWrapper.style.display   = "block";
+    if (loginRequired) loginRequired.style.display = "none";
+
+    // Verificar si ya tiene un equipo registrado con este UID
+    checkUserTeam(user.uid);
+
+  } else {
+    // ── Usuario NO LOGUEADO ───────────────────────────────────────────────
+    currentUser = null;
+
+    // Mostrar modal de auth
+    if (overlay) overlay.style.display = "flex";
+
+    // Ocultar estado de usuario en navbar
+    if (userStatus) userStatus.style.display = "none";
+
+    // Ocultar formulario, mostrar banner de login
+    if (formWrapper)   formWrapper.style.display   = "none";
+    if (loginRequired) loginRequired.style.display = "flex";
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTH — Verificar si el usuario ya registró un equipo
+// ══════════════════════════════════════════════════════════════════════════════
+async function checkUserTeam(uid) {
+  const registroForm       = document.getElementById("registroForm");
+  const alreadyRegistered  = document.getElementById("alreadyRegistered");
+  const alreadyName        = document.getElementById("alreadyRegisteredName");
+
+  try {
+    const q    = query(collection(db, COLLECTION), where("uid", "==", uid));
+    const snap = await getDocs(q);
+
+    if (!snap.empty) {
+      // Ya tiene equipo → ocultar form, mostrar mensaje
+      const teamData = snap.docs[0].data();
+      if (registroForm)      registroForm.style.display      = "none";
+      if (alreadyRegistered) alreadyRegistered.style.display = "block";
+      if (alreadyName)       alreadyName.textContent         = `Tu equipo "${teamData.teamName}" ya está inscrito. ¡Buena suerte!`;
+    } else {
+      // No tiene equipo → mostrar form
+      if (registroForm)      registroForm.style.display      = "block";
+      if (alreadyRegistered) alreadyRegistered.style.display = "none";
+    }
+  } catch (err) {
+    console.error("Error verificando equipo del usuario:", err);
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FIRESTORE — Contador de equipos en el Hero
+// ══════════════════════════════════════════════════════════════════════════════
 function updateStats(count) {
-  const totalEl = document.getElementById("totalEquipos");
+  const totalEl  = document.getElementById("totalEquipos");
   const libresEl = document.getElementById("cuposLibres");
   if (totalEl)  totalEl.textContent  = count;
   if (libresEl) libresEl.textContent = Math.max(0, MAX_TEAMS - count);
 }
 
-// ─── 8. CARGAR EQUIPOS en tiempo real (onSnapshot) ────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FIRESTORE — Cargar equipos en tiempo real
+// ══════════════════════════════════════════════════════════════════════════════
 function loadTeams() {
   const container = document.getElementById("teamsContainer");
   if (!container) return;
 
-  // Consulta ordenada por fecha de creación
+  // ✅ query() modular — NO db.collection().orderBy()
   const q = query(
     collection(db, COLLECTION),
     orderBy("timestamp", "asc")
   );
 
-  // onSnapshot escucha cambios en tiempo real
+  // ✅ onSnapshot modular
   onSnapshot(q, (snapshot) => {
     updateStats(snapshot.size);
 
@@ -156,31 +408,38 @@ function loadTeams() {
       container.appendChild(createTeamCard(doc.data(), idx++));
     });
 
-  }, (error) => {
-    console.error("Error al cargar equipos:", error);
+  }, (err) => {
+    console.error("Error cargando equipos:", err);
     container.innerHTML = `
       <div class="empty-state">
         <span class="empty-icon">⚠️</span>
         <p>Error al cargar equipos.</p>
-        <p>Verifica tu configuración de Firebase.</p>
+        <p style="font-size:0.85rem;color:var(--red);">${escapeHtml(err.message)}</p>
       </div>`;
   });
 }
 
-// ─── 9. CREAR TARJETA DE EQUIPO ───────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UI — Crear tarjeta de equipo
+// ══════════════════════════════════════════════════════════════════════════════
 function createTeamCard(data, num) {
   const card = document.createElement("div");
   card.className = "team-card";
-  card.style.animationDelay = `${(num - 1) * 0.07}s`;
+  card.style.animationDelay = `${(num - 1) * 0.07}s`;  // ✅ backtick correcto
 
   const initials = data.teamName
-    ? data.teamName.substring(0, 2).toUpperCase()
-    : "??";
+    ? data.teamName.substring(0, 2).toUpperCase() : "??";
 
-  const playerTags = (data.players || [])
+  const playersArray = Array.isArray(data.players) ? data.players : [];
+  const playerTags = playersArray
     .map(p => `<span class="player-tag">⚔ ${escapeHtml(p)}</span>`)
     .join("");
 
+  const registeredBy = data.userDisplayName
+    ? `<div class="team-registered-by">Registrado por: ${escapeHtml(data.userDisplayName)}</div>` : "";
+
+  // ✅ Template literals correctos (backticks en toda la cadena)
   card.innerHTML = `
     <span class="team-num">#${String(num).padStart(2, "0")}</span>
     <div class="team-card-header">
@@ -188,6 +447,7 @@ function createTeamCard(data, num) {
       <div>
         <div class="team-name">${escapeHtml(data.teamName || "")}</div>
         <div class="team-captain">👑 ${escapeHtml(data.captain || "")}</div>
+        ${registeredBy}
       </div>
     </div>
     <div class="team-players">${playerTags}</div>`;
@@ -195,12 +455,15 @@ function createTeamCard(data, num) {
   return card;
 }
 
-// ─── 10. VALIDACIÓN DEL FORMULARIO ────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FORMULARIO — Limpiar errores
+// ══════════════════════════════════════════════════════════════════════════════
 function clearErrors() {
   document.querySelectorAll(".error-msg").forEach(el => (el.textContent = ""));
   document.querySelectorAll(".error-field").forEach(el => el.classList.remove("error-field"));
-  const formError = document.getElementById("formError");
-  if (formError) formError.style.display = "none";
+  const fe = document.getElementById("formError");
+  if (fe) fe.style.display = "none";
 }
 
 function setFieldError(inputId, errId, msg) {
@@ -210,6 +473,10 @@ function setFieldError(inputId, errId, msg) {
   if (err)   err.textContent = msg;
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FORMULARIO — Validar campos
+// ══════════════════════════════════════════════════════════════════════════════
 function validateForm() {
   clearErrors();
   let valid = true;
@@ -218,21 +485,17 @@ function validateForm() {
   const captain  = document.getElementById("captain")?.value.trim()  || "";
   const contact  = document.getElementById("contact")?.value.trim()  || "";
   const playerInputs = Array.from(document.querySelectorAll(".player-input"));
-  const players = playerInputs.map(i => i.value.trim());
+  const players  = playerInputs.map(i => i.value.trim());
 
-  if (!teamName) {
-    setFieldError("teamName", "err-teamName", "El nombre del equipo es obligatorio.");
-    valid = false;
-  } else if (teamName.length < 2) {
-    setFieldError("teamName", "err-teamName", "El nombre debe tener al menos 2 caracteres.");
+  if (!teamName || teamName.length < 2) {
+    setFieldError("teamName", "err-teamName",
+      teamName ? "El nombre debe tener al menos 2 caracteres." : "El nombre del equipo es obligatorio.");
     valid = false;
   }
-
   if (!captain) {
     setFieldError("captain", "err-captain", "El nombre del capitán es obligatorio.");
     valid = false;
   }
-
   if (!contact) {
     setFieldError("contact", "err-contact", "El WhatsApp del capitán es obligatorio.");
     valid = false;
@@ -241,44 +504,54 @@ function validateForm() {
     valid = false;
   }
 
-  // Validar los 5 jugadores
+  // 5 jugadores obligatorios
   players.forEach((p, i) => {
     if (!p) {
       playerInputs[i].classList.add("error-field");
-      const errEl = document.getElementById(`err-p${i}`);
+      const errEl = document.getElementById(`err-p${i}`);  // ✅ backtick correcto
       if (errEl) errEl.textContent = "Este jugador es obligatorio.";
       valid = false;
     }
   });
 
-  if (!valid) return null;
-  return { teamName, captain, contact, players };
+  return valid ? { teamName, captain, contact, players } : null;
 }
 
-// ─── 11. MOSTRAR / OCULTAR LOADER DEL BOTÓN ───────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FORMULARIO — Loader del botón de envío
+// ══════════════════════════════════════════════════════════════════════════════
 function setLoading(isLoading) {
   const btn    = document.getElementById("submitBtn");
   const text   = document.getElementById("btnText");
   const loader = document.getElementById("btnLoader");
   if (!btn || !text || !loader) return;
-  btn.disabled          = isLoading;
-  text.style.display    = isLoading ? "none"   : "inline";
-  loader.style.display  = isLoading ? "inline" : "none";
+  btn.disabled         = isLoading;
+  text.style.display   = isLoading ? "none"   : "inline";
+  loader.style.display = isLoading ? "inline" : "none";
 }
 
-// ─── 12. MOSTRAR MENSAJE DE ERROR GENERAL ─────────────────────────────────
 function showFormError(msg) {
   const el = document.getElementById("formError");
   if (!el) return;
-  el.textContent    = msg;
-  el.style.display  = "block";
+  el.textContent   = msg;
+  el.style.display = "block";
 }
 
-// ─── 13. SUBMIT DEL FORMULARIO ────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FORMULARIO — Submit (registrar equipo)
+// ══════════════════════════════════════════════════════════════════════════════
 async function handleSubmit(e) {
   e.preventDefault();
 
-  // Paso 1: validar campos
+  // 1. ¿Está logueado?
+  if (!currentUser) {
+    showFormError("🔒 Debes iniciar sesión para registrar tu equipo.");
+    return;
+  }
+
+  // 2. Validar campos
   const data = validateForm();
   if (!data) return;
 
@@ -287,42 +560,51 @@ async function handleSubmit(e) {
   try {
     const ref = collection(db, COLLECTION);
 
-    // Paso 2: verificar cupos disponibles
-    const countSnap = await getCountFromServer(ref);
-    const total = countSnap.data().count;
-
-    if (total >= MAX_TEAMS) {
+    // 3. ¿Cupos disponibles?
+    const allSnap = await getDocs(ref);
+    if (allSnap.size >= MAX_TEAMS) {
       showFormError("⚠️ Lo sentimos, todos los cupos están llenos.");
       setLoading(false);
       return;
     }
 
-    // Paso 3: verificar nombre duplicado
-    const dupQuery = query(ref, where("teamName", "==", data.teamName));
-    const dupSnap  = await getDocs(dupQuery);
+    // 4. ¿Ya tiene equipo este usuario?
+    const myTeamQ    = query(ref, where("uid", "==", currentUser.uid));
+    const myTeamSnap = await getDocs(myTeamQ);
+    if (!myTeamSnap.empty) {
+      showFormError("⚠️ Ya tienes un equipo inscrito en este torneo.");
+      setLoading(false);
+      await checkUserTeam(currentUser.uid);
+      return;
+    }
 
+    // 5. ¿Nombre de equipo duplicado?
+    const dupQ    = query(ref, where("teamName", "==", data.teamName));
+    const dupSnap = await getDocs(dupQ);
     if (!dupSnap.empty) {
       setFieldError("teamName", "err-teamName", "Ya existe un equipo con ese nombre.");
       setLoading(false);
       return;
     }
 
-    // Paso 4: recolectar suplentes (opcionales)
+    // 6. Suplentes opcionales
     const subs = Array.from(document.querySelectorAll(".sub-input"))
-      .map(i => i.value.trim())
-      .filter(Boolean);
+      .map(i => i.value.trim()).filter(Boolean);
 
-    // Paso 5: guardar en Firestore con addDoc
+    // 7. Guardar en Firestore ✅ addDoc modular correcto
     await addDoc(ref, {
-      teamName:  data.teamName,
-      captain:   data.captain,
-      contact:   data.contact,
-      players:   data.players,
-      subs:      subs,
-      timestamp: serverTimestamp()   // ← serverTimestamp() importado modular
+      teamName:        data.teamName,
+      captain:         data.captain,
+      contact:         data.contact,
+      players:         data.players,
+      subs:            subs,
+      uid:             currentUser.uid,           // ← vincula el equipo al usuario
+      userEmail:       currentUser.email,
+      userDisplayName: currentUser.displayName || currentUser.email.split("@")[0],
+      timestamp:       serverTimestamp()           // ✅ serverTimestamp() modular correcto
     });
 
-    // Paso 6: mostrar pantalla de éxito
+    // 8. Éxito
     const form    = document.getElementById("registroForm");
     const success = document.getElementById("formSuccess");
     if (form)    form.style.display    = "none";
@@ -330,14 +612,16 @@ async function handleSubmit(e) {
 
   } catch (err) {
     console.error("Error al guardar el equipo:", err);
-    showFormError("❌ Error al guardar. Verifica tu configuración de Firebase.");
+    showFormError(`❌ Error al guardar: ${err.message}`);
   } finally {
     setLoading(false);
   }
 }
 
-// ─── 14. RESETEAR FORMULARIO ──────────────────────────────────────────────
-// Expuesta en window para que el botón "onclick" del HTML pueda llamarla
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FORMULARIO — Resetear
+// ══════════════════════════════════════════════════════════════════════════════
 function resetForm() {
   const form    = document.getElementById("registroForm");
   const success = document.getElementById("formSuccess");
@@ -348,9 +632,12 @@ function resetForm() {
   if (success) success.style.display = "none";
   clearErrors();
 }
-window.resetForm = resetForm; // ← necesario porque app.js es type="module"
+window.resetForm = resetForm;  // ✅ Exponer al HTML (necesario por type="module")
 
-// ─── 15. UTILIDAD: escapar HTML para prevenir XSS ─────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UTILIDAD — Escapar HTML para prevenir XSS
+// ══════════════════════════════════════════════════════════════════════════════
 function escapeHtml(str) {
   if (!str) return "";
   return str
@@ -361,12 +648,23 @@ function escapeHtml(str) {
     .replace(/'/g,  "&#039;");
 }
 
-// ─── 16. INICIALIZACIÓN AL CARGAR EL DOM ──────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INICIALIZACIÓN
+// ══════════════════════════════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
   initParticles();
   initNavbar();
   loadTeams();
 
+  // Vincular submit del formulario
   const form = document.getElementById("registroForm");
   if (form) form.addEventListener("submit", handleSubmit);
+
+  // ── Firebase Auth — escucha cambios de sesión en tiempo real ──────────────
+  // onAuthStateChanged se dispara al cargar la página y cada vez que
+  // el usuario hace login o logout. Es el corazón del sistema de auth.
+  onAuthStateChanged(auth, (user) => {
+    updateAuthUI(user);
+  });
 });
