@@ -641,16 +641,42 @@ function escapeHtml(str) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// INICIALIZACIÓN
+// INICIALIZACIÓN (Y VÍNCULOS DE BOTONES MEJORADOS)
 // ══════════════════════════════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
   initParticles();
   initNavbar();
   loadTeams();
 
-  // Vincular submit del formulario
+  // Vincular submit del formulario de registro de equipo
   const form = document.getElementById("registroForm");
   if (form) form.addEventListener("submit", handleSubmit);
+
+  // 🛡️ MODIFICACIÓN APLICADA: Vincular los botones de Auth directamente aquí
+  // para asegurar que el navegador los detecte sin importar el HTML.
+  const btnLogin = document.getElementById("btnLogin");
+  if (btnLogin) {
+    btnLogin.addEventListener("click", (e) => {
+      e.preventDefault(); // Evita que la página se recargue al dar clic
+      handleLogin();
+    });
+  }
+
+  const btnRegister = document.getElementById("btnRegister");
+  if (btnRegister) {
+    btnRegister.addEventListener("click", (e) => {
+      e.preventDefault(); // Evita que la página se recargue al dar clic
+      handleRegister();
+    });
+  }
+
+  const btnLogout = document.querySelector(".btn-logout"); // Asumiendo que usas esta clase para el botón de salir
+  if (btnLogout) {
+    btnLogout.addEventListener("click", (e) => {
+      e.preventDefault();
+      handleLogout();
+    });
+  }
 
   // ── Firebase Auth — escucha cambios de sesión en tiempo real ──────────────
   // onAuthStateChanged se dispara al cargar la página y cada vez que
