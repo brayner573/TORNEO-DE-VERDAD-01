@@ -1,20 +1,10 @@
 // =====================================================================
 // app.js — Firebase Modular v9 | Auth + Firestore
-// Torneo Dota 2 OPEN
-//
-// BUGS CORREGIDOS DEL CÓDIGO ORIGINAL:
-// ❌ firebase.initializeApp() → ✅ initializeApp()  (era compat mezclado con modular)
-// ❌ firebase.firestore()     → ✅ getFirestore(app)
-// ❌ Template literals sin backticks → ✅ Todos los strings con `` correctos
-// ❌ Sin Firebase Auth → ✅ Login/Registro/Logout completo
-// ❌ Sin protección del formulario → ✅ Solo usuarios logueados pueden registrar
-// ❌ Sin detección de equipo ya registrado → ✅ Se verifica por UID del usuario
-// ❌ window.resetForm no persistía entre recargas → ✅ Vinculado correctamente
+// Torneo Dota 2 OPEN - VERSIÓN FINAL FUNCIONAL
 // =====================================================================
 
 // ─── IMPORTS Firebase Modular v9 ──────────────────────────────────────────────
-import { initializeApp } from
-  "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 
 import {
   getAuth,
@@ -38,7 +28,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 // ─── CONFIGURACIÓN FIREBASE ────────────────────────────────────────────────────
-// ✅ Tus credenciales reales ya están aquí
 const firebaseConfig = {
   apiKey: "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
   authDomain: "torneo-de-dotita.firebaseapp.com",
@@ -49,9 +38,11 @@ const firebaseConfig = {
   measurementId: "G-RTVLG14J1Q"
 };
 
-// Initialize Firebase
+// ─── INICIALIZACIÓN DE FIREBASE ──────────────────────────────────────────────
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const auth = getAuth(app);      // ✅ Faltaba inicializar Auth
+const db = getFirestore(app);   // ✅ Faltaba inicializar Firestore
+// ❌ Se eliminó getAnalytics para evitar el error de importación que rompía la app
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const COLLECTION = "equipos";
@@ -598,7 +589,7 @@ async function handleSubmit(e) {
       contact:         data.contact,
       players:         data.players,
       subs:            subs,
-      uid:             currentUser.uid,           // ← vincula el equipo al usuario
+      uid:             currentUser.uid,            // ← vincula el equipo al usuario
       userEmail:       currentUser.email,
       userDisplayName: currentUser.displayName || currentUser.email.split("@")[0],
       timestamp:       serverTimestamp()           // ✅ serverTimestamp() modular correcto
