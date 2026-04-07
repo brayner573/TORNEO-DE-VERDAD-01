@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DOTA 2 TOURNAMENT – BATALLA DE CARRERAS</title>
+  <title>DOTA 2 TOURNAMENT – La Batalla Final</title>
 
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
+  <!-- CANVAS PARTICLES -->
   <canvas id="particles"></canvas>
 
+  <!-- NAVBAR -->
   <nav class="navbar">
-    
     <div class="nav-logo">⚔ DOTA 2 OPEN</div>
     <ul class="nav-links">
       <li><a href="#inicio">Inicio</a></li>
@@ -31,13 +31,14 @@
     </a>
   </nav>
 
+  <!-- HERO -->
   <section class="hero" id="inicio">
     <div class="hero-glow"></div>
     <div class="hero-content">
-      <div class="hero-badge">TORNEO OFICIAL 2026</div>
+      <div class="hero-badge">TORNEO OFICIAL 2025</div>
       <h1 class="hero-title">
         <span class="title-line">LA BATALLA</span>
-        <span class="title-line accent">DE CARRERAS UNIVERSITARIAS edicion UPEU</span>
+        <span class="title-line accent">FINAL</span>
       </h1>
       <p class="hero-subtitle">El torneo más épico de Dota 2 está aquí.<br/>¿Tienes lo que se necesita para conquistar el trono?</p>
 
@@ -63,16 +64,15 @@
         </a>
       </div>
     </div>
-
     <div class="hero-deco left">⬡</div>
     <div class="hero-deco right">⬡</div>
   </section>
 
+  <!-- PREMIOS -->
   <section class="section" id="premios">
     <div class="container">
       <h2 class="section-title">🏆 Premios</h2>
       <p class="section-sub">Los mejores del torneo se llevan la gloria</p>
-
       <div class="prizes-grid">
         <div class="prize-card silver">
           <div class="prize-pos">2°</div>
@@ -100,11 +100,11 @@
     </div>
   </section>
 
+  <!-- REGLAS -->
   <section class="section dark" id="reglas">
     <div class="container">
       <h2 class="section-title">📜 Reglas del Torneo</h2>
       <p class="section-sub">Léelas con atención antes de inscribirte</p>
-
       <div class="rules-grid">
         <div class="rule-card">
           <div class="rule-num">01</div>
@@ -140,12 +140,15 @@
     </div>
   </section>
 
+  <!-- REGISTRO -->
   <section class="section" id="registro">
     <div class="container">
       <h2 class="section-title">⚔ Registrar Equipo</h2>
       <p class="section-sub">Completa el formulario para unirte al torneo</p>
 
       <div class="form-wrapper">
+
+        <!-- Pantalla de éxito (oculta al inicio) -->
         <div id="formSuccess" class="form-success" style="display:none;">
           <div class="success-icon">✅</div>
           <h3>¡Equipo registrado con éxito!</h3>
@@ -154,10 +157,13 @@
              target="_blank" class="btn-whatsapp big">
             📲 Unirse al Grupo WhatsApp
           </a>
+          <br/>
           <button onclick="resetForm()" class="btn-secondary">Registrar otro equipo</button>
         </div>
 
+        <!-- Formulario -->
         <form id="registroForm" novalidate>
+
           <div class="form-group">
             <label for="teamName">🛡 Nombre del Equipo *</label>
             <input type="text" id="teamName" placeholder="Ej: Equipo Fenix" maxlength="40"/>
@@ -217,35 +223,27 @@
             <span id="btnLoader" style="display:none;">⏳ Guardando...</span>
           </button>
         </form>
+
       </div>
     </div>
   </section>
 
+  <!-- EQUIPOS INSCRITOS -->
   <section class="section dark" id="equipos">
     <div class="container">
       <h2 class="section-title">🛡 Equipos Inscritos</h2>
       <p class="section-sub">Los guerreros que han aceptado el reto</p>
-
       <div id="teamsContainer" class="teams-grid">
         <div class="loading-state">⚔ Cargando equipos...</div>
       </div>
     </div>
   </section>
 
+  <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-content">
       <p class="footer-logo">⚔ DOTA 2 OPEN</p>
       <p class="footer-sub">Torneo organizado con pasión por la comunidad</p>
-      
-      <div class="footer-socials">
-        <a href="https://tiktok.com/@brayner722" target="_blank" class="social-btn tiktok">
-          <i class="fab fa-tiktok"></i> TikTok
-        </a>
-        <a href="https://kick.com/brayner45" target="_blank" class="social-btn kick">
-          <i class="fas fa-play-circle"></i> Kick
-        </a>
-      </div>
-
       <a href="https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t"
          target="_blank" class="btn-whatsapp">
         📲 Unirse al Grupo WhatsApp
@@ -254,6 +252,12 @@
     </div>
   </footer>
 
+  <!--
+    IMPORTANTE: app.js debe ser type="module" para poder usar
+    import/export de Firebase modular v9.
+    NO uses <script src="..."> sin type="module" para este archivo.
+  -->
   <script type="module" src="app.js"></script>
+
 </body>
 </html>
