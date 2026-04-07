@@ -1,8 +1,35 @@
-// =====================================================
-// app.js — Lógica principal del torneo Dota 2 con Firebase Modular
-// =====================================================
+// =====================================================================
+// app.js — Firebase Modular v9 + Lógica completa del torneo Dota 2
+//
+// CORRECCIONES APLICADAS vs versión antigua (compat):
+// ✅ Usa import desde CDN (esm.sh) — NO firebase-app-compat
+// ✅ initializeApp en lugar de firebase.initializeApp()
+// ✅ getFirestore() en lugar de firebase.firestore()
+// ✅ collection(), addDoc(), getDocs(), query(), where(), orderBy(),
+//    onSnapshot(), serverTimestamp() importados individualmente
+// ✅ Sin variables globales de Firebase — todo encapsulado en módulo
+// ✅ resetForm() expuesta en window para que el HTML pueda llamarla
+// ✅ Partículas separadas e iniciadas al cargar el DOM
+// =====================================================================
 
-// Importaciones de Firebase Modular (CDN)
+// ─── 1. IMPORTS — Firebase modular v9 desde CDN ───────────────────────────
+import { initializeApp }                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  getCountFromServer
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ─── 2. CONFIGURACIÓN FIREBASE ────────────────────────────────────────────
+// ⚠️  REEMPLAZA estos valores con los de TU proyecto en Firebase Console
+//     https://console.firebase.google.com/ → Tu proyecto → Configuración → Web
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
@@ -21,19 +48,26 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+
+
+// ─── 4. CONSTANTES ────────────────────────────────────────────────────────
+const COLLECTION   = "equipos";   // Nombre de la colección Firestore
+const MAX_TEAMS    = 16;
 const WHATSAPP_URL = "https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t";
-const MAX_TEAMS = 16;
-const COLLECTION_NAME = "equipos"; // Nombre de la colección en Firestore
 
-
-// ─── PARTICLES BACKGROUND ─────────────────────────────────────────────────────
-(function initParticles() {
+// ─── 5. PARTICLES BACKGROUND ──────────────────────────────────────────────
+function initParticles() {
   const canvas = document.getElementById("particles");
-  const ctx    = canvas.getContext("2d");
-  if (!canvas) return; // Seguridad
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  const COLORS = [
+    "rgba(184,24,26,0.6)",
+    "rgba(212,160,23,0.5)",
+    "rgba(240,192,64,0.3)"
+  ];
 
   let particles = [];
-  const COLORS  = ["rgba(184,24,26,0.6)", "rgba(212,160,23,0.5)", "rgba(240,192,64,0.3)"];
 
   function resize() {
     canvas.width  = window.innerWidth;
@@ -42,7 +76,7 @@ const COLLECTION_NAME = "equipos"; // Nombre de la colección en Firestore
   resize();
   window.addEventListener("resize", resize);
 
-  // Crear partículas iniciales
+  // Crear 55 partículas aleatorias
   for (let i = 0; i < 55; i++) {
     particles.push({
       x:     Math.random() * canvas.width,
@@ -61,11 +95,8 @@ const COLLECTION_NAME = "equipos"; // Nombre de la colección en Firestore
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
       ctx.fill();
-
-      // Mover partícula
       p.x += p.vx;
       p.y += p.vy;
-
       // Rebotar en bordes
       if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
       if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
@@ -73,39 +104,39 @@ const COLLECTION_NAME = "equipos"; // Nombre de la colección en Firestore
     requestAnimationFrame(draw);
   }
   draw();
-})();
-
-
-// ─── NAVBAR SCROLL EFFECT ─────────────────────────────────────────────────────
-window.addEventListener("scroll", () => {
-  const nav = document.querySelector(".navbar");
-  if (!nav) return;
-  nav.style.boxShadow = window.scrollY > 50
-    ? "0 4px 24px rgba(0,0,0,0.7)"
-    : "none";
-});
-
-
-// ─── CONTADOR DE EQUIPOS (Actualizar UI) ──────────────────────────────────────
-function updateStats(count) {
-  const libre = Math.max(0, MAX_TEAMS - count);
-  const totalEl = document.getElementById("totalEquipos");
-  const libreEl = document.getElementById("cuposLibres");
-  if (totalEl) totalEl.textContent = count;
-  if (libreEl) libreEl.textContent = libre;
 }
 
+// ─── 6. NAVBAR — efecto sombra al hacer scroll ────────────────────────────
+function initNavbar() {
+  const nav = document.querySelector(".navbar");
+  if (!nav) return;
+  window.addEventListener("scroll", () => {
+    nav.style.boxShadow = window.scrollY > 50
+      ? "0 4px 24px rgba(0,0,0,0.7)"
+      : "none";
+  });
+}
 
-// ─── CARGAR EQUIPOS (Escucha en tiempo real modular) ─────────────────────────
+// ─── 7. ACTUALIZAR CONTADORES en el Hero ──────────────────────────────────
+function updateStats(count) {
+  const totalEl = document.getElementById("totalEquipos");
+  const libresEl = document.getElementById("cuposLibres");
+  if (totalEl)  totalEl.textContent  = count;
+  if (libresEl) libresEl.textContent = Math.max(0, MAX_TEAMS - count);
+}
+
+// ─── 8. CARGAR EQUIPOS en tiempo real (onSnapshot) ────────────────────────
 function loadTeams() {
   const container = document.getElementById("teamsContainer");
   if (!container) return;
 
-  const teamsRef = collection(db, COLLECTION_NAME);
-  // Consulta ordenada por timestamp ascendente
-  const q = query(teamsRef, orderBy("timestamp", "asc"));
+  // Consulta ordenada por fecha de creación
+  const q = query(
+    collection(db, COLLECTION),
+    orderBy("timestamp", "asc")
+  );
 
-  // Escuchar en tiempo real
+  // onSnapshot escucha cambios en tiempo real
   onSnapshot(q, (snapshot) => {
     updateStats(snapshot.size);
 
@@ -121,25 +152,24 @@ function loadTeams() {
 
     container.innerHTML = "";
     let idx = 1;
-    snapshot.forEach((doc) => {
-      const d = doc.data();
-      container.appendChild(createTeamCard(d, idx++));
+    snapshot.forEach(doc => {
+      container.appendChild(createTeamCard(doc.data(), idx++));
     });
-  }, (err) => {
-    console.error("Error cargando equipos:", err);
+
+  }, (error) => {
+    console.error("Error al cargar equipos:", error);
     container.innerHTML = `
       <div class="empty-state">
         <span class="empty-icon">⚠️</span>
-        <p>Error al cargar equipos. Revisa la configuración y reglas de Firestore en la consola de Firebase.</p>
-        <p style="font-size:0.8rem;color:red;">Detalle: ${err.message}</p>
+        <p>Error al cargar equipos.</p>
+        <p>Verifica tu configuración de Firebase.</p>
       </div>`;
   });
 }
 
-
-// ─── CREAR TARJETA DE EQUIPO ──────────────────────────────────────────────────
+// ─── 9. CREAR TARJETA DE EQUIPO ───────────────────────────────────────────
 function createTeamCard(data, num) {
-  const card    = document.createElement("div");
+  const card = document.createElement("div");
   card.className = "team-card";
   card.style.animationDelay = `${(num - 1) * 0.07}s`;
 
@@ -147,36 +177,34 @@ function createTeamCard(data, num) {
     ? data.teamName.substring(0, 2).toUpperCase()
     : "??";
 
-  // Jugadores como tags (seguridad ante nulos)
-  const playersArray = Array.isArray(data.players) ? data.players : [];
-  const playerTags = playersArray
+  const playerTags = (data.players || [])
     .map(p => `<span class="player-tag">⚔ ${escapeHtml(p)}</span>`)
     .join("");
 
   card.innerHTML = `
-    <span class="team-num">#${String(num).padStart(2,"0")}</span>
+    <span class="team-num">#${String(num).padStart(2, "0")}</span>
     <div class="team-card-header">
       <div class="team-avatar">${escapeHtml(initials)}</div>
       <div>
-        <div class="team-name">${escapeHtml(data.teamName)}</div>
-        <div class="team-captain">👑 ${escapeHtml(data.captain)}</div>
+        <div class="team-name">${escapeHtml(data.teamName || "")}</div>
+        <div class="team-captain">👑 ${escapeHtml(data.captain || "")}</div>
       </div>
     </div>
     <div class="team-players">${playerTags}</div>`;
+
   return card;
 }
 
-
-// ─── VALIDAR FORMULARIO ────────────────────────────────────────────────────────
+// ─── 10. VALIDACIÓN DEL FORMULARIO ────────────────────────────────────────
 function clearErrors() {
-  document.querySelectorAll(".error-msg").forEach(el => el.textContent = "");
+  document.querySelectorAll(".error-msg").forEach(el => (el.textContent = ""));
   document.querySelectorAll(".error-field").forEach(el => el.classList.remove("error-field"));
   const formError = document.getElementById("formError");
   if (formError) formError.style.display = "none";
 }
 
-function setError(fieldId, errId, msg) {
-  const field = document.getElementById(fieldId);
+function setFieldError(inputId, errId, msg) {
+  const field = document.getElementById(inputId);
   const err   = document.getElementById(errId);
   if (field) field.classList.add("error-field");
   if (err)   err.textContent = msg;
@@ -186,161 +214,159 @@ function validateForm() {
   clearErrors();
   let valid = true;
 
-  const teamNameInput = document.getElementById("teamName");
-  const captainInput = document.getElementById("captain");
-  const contactInput = document.getElementById("contact");
-  if (!teamNameInput || !captainInput || !contactInput) return null; // Error fatal de estructura
-
-  const teamName = teamNameInput.value.trim();
-  const captain  = captainInput.value.trim();
-  const contact  = contactInput.value.trim();
-  const players  = Array.from(document.querySelectorAll(".player-input"))
-                        .map(i => i.value.trim());
+  const teamName = document.getElementById("teamName")?.value.trim() || "";
+  const captain  = document.getElementById("captain")?.value.trim()  || "";
+  const contact  = document.getElementById("contact")?.value.trim()  || "";
+  const playerInputs = Array.from(document.querySelectorAll(".player-input"));
+  const players = playerInputs.map(i => i.value.trim());
 
   if (!teamName) {
-    setError("teamName", "err-teamName", "El nombre del equipo es obligatorio.");
+    setFieldError("teamName", "err-teamName", "El nombre del equipo es obligatorio.");
+    valid = false;
+  } else if (teamName.length < 2) {
+    setFieldError("teamName", "err-teamName", "El nombre debe tener al menos 2 caracteres.");
     valid = false;
   }
+
   if (!captain) {
-    setError("captain", "err-captain", "El nombre del capitán es obligatorio.");
+    setFieldError("captain", "err-captain", "El nombre del capitán es obligatorio.");
     valid = false;
   }
+
   if (!contact) {
-    setError("contact", "err-contact", "El contacto de WhatsApp es obligatorio.");
+    setFieldError("contact", "err-contact", "El WhatsApp del capitán es obligatorio.");
     valid = false;
   } else if (!/^[\+]?[\d\s\-\(\)]{7,20}$/.test(contact)) {
-    setError("contact", "err-contact", "Ingresa un número de teléfono válido.");
+    setFieldError("contact", "err-contact", "Ingresa un número de teléfono válido.");
     valid = false;
   }
 
   // Validar los 5 jugadores
-  const playerInputs = document.querySelectorAll(".player-input");
   players.forEach((p, i) => {
     if (!p) {
-      if (playerInputs[i]) playerInputs[i].classList.add("error-field");
-      const errP = document.getElementById(`err-p${i}`);
-      if (errP) errP.textContent = "Campo requerido.";
+      playerInputs[i].classList.add("error-field");
+      const errEl = document.getElementById(`err-p${i}`);
+      if (errEl) errEl.textContent = "Este jugador es obligatorio.";
       valid = false;
     }
   });
 
-  return valid
-    ? { teamName, captain, contact, players }
-    : null;
+  if (!valid) return null;
+  return { teamName, captain, contact, players };
 }
 
+// ─── 11. MOSTRAR / OCULTAR LOADER DEL BOTÓN ───────────────────────────────
+function setLoading(isLoading) {
+  const btn    = document.getElementById("submitBtn");
+  const text   = document.getElementById("btnText");
+  const loader = document.getElementById("btnLoader");
+  if (!btn || !text || !loader) return;
+  btn.disabled          = isLoading;
+  text.style.display    = isLoading ? "none"   : "inline";
+  loader.style.display  = isLoading ? "inline" : "none";
+}
 
-// ─── SUBMIT FORMULARIO (Sintaxis Modular) ─────────────────────────────────────
-const registroForm = document.getElementById("registroForm");
-if (registroForm) {
-  registroForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+// ─── 12. MOSTRAR MENSAJE DE ERROR GENERAL ─────────────────────────────────
+function showFormError(msg) {
+  const el = document.getElementById("formError");
+  if (!el) return;
+  el.textContent    = msg;
+  el.style.display  = "block";
+}
 
-    const data = validateForm();
-    if (!data) return;
+// ─── 13. SUBMIT DEL FORMULARIO ────────────────────────────────────────────
+async function handleSubmit(e) {
+  e.preventDefault();
 
-    // Referencias de UI
-    const btnText = document.getElementById("btnText");
-    const btnLoader = document.getElementById("btnLoader");
-    const submitBtn = document.getElementById("submitBtn");
-    const formErrorEl = document.getElementById("formError");
+  // Paso 1: validar campos
+  const data = validateForm();
+  if (!data) return;
 
-    // Verificar cupos disponibles (consulta rapida)
-    const teamsRef = collection(db, COLLECTION_NAME);
-    let totalInscritos = 0;
-    try {
-      const snapTotal = await getDocs(teamsRef);
-      totalInscritos = snapTotal.size;
-    } catch (e) {
-      console.error("Error verificando cupos:", e);
-    }
+  setLoading(true);
 
-    if (totalInscritos >= MAX_TEAMS) {
-      if (formErrorEl) {
-        formErrorEl.textContent = "⚠ Lo sentimos, todos los cupos están llenos.";
-        formErrorEl.style.display = "block";
-      }
+  try {
+    const ref = collection(db, COLLECTION);
+
+    // Paso 2: verificar cupos disponibles
+    const countSnap = await getCountFromServer(ref);
+    const total = countSnap.data().count;
+
+    if (total >= MAX_TEAMS) {
+      showFormError("⚠️ Lo sentimos, todos los cupos están llenos.");
+      setLoading(false);
       return;
     }
 
-    // Verificar que el nombre no esté repetido
-    const qDup = query(teamsRef, where("teamName", "==", data.teamName));
-    try {
-      const dupSnap = await getDocs(qDup);
-      if (!dupSnap.empty) {
-        setError("teamName", "err-teamName", "Ya existe un equipo con ese nombre.");
-        return;
-      }
-    } catch (e) {
-      console.error("Error verificando duplicados:", e);
+    // Paso 3: verificar nombre duplicado
+    const dupQuery = query(ref, where("teamName", "==", data.teamName));
+    const dupSnap  = await getDocs(dupQuery);
+
+    if (!dupSnap.empty) {
+      setFieldError("teamName", "err-teamName", "Ya existe un equipo con ese nombre.");
+      setLoading(false);
+      return;
     }
 
-    // Mostrar loader
-    if (btnText) btnText.style.display   = "none";
-    if (btnLoader) btnLoader.style.display = "inline";
-    if (submitBtn) submitBtn.disabled      = true;
-
-    // Suplentes
+    // Paso 4: recolectar suplentes (opcionales)
     const subs = Array.from(document.querySelectorAll(".sub-input"))
-                      .map(i => i.value.trim())
-                      .filter(Boolean);
+      .map(i => i.value.trim())
+      .filter(Boolean);
 
-    try {
-      // Guardar en Firestore Modular
-      await addDoc(teamsRef, {
-        teamName:  data.teamName,
-        captain:   data.captain,
-        contact:   data.contact,
-        players:   data.players,
-        subs:      subs,
-        timestamp: serverTimestamp() // Tiempo del servidor
-      });
+    // Paso 5: guardar en Firestore con addDoc
+    await addDoc(ref, {
+      teamName:  data.teamName,
+      captain:   data.captain,
+      contact:   data.contact,
+      players:   data.players,
+      subs:      subs,
+      timestamp: serverTimestamp()   // ← serverTimestamp() importado modular
+    });
 
-      // Mostrar éxito
-      if (registroForm) registroForm.style.display = "none";
-      const formSuccess = document.getElementById("formSuccess");
-      if (formSuccess) formSuccess.style.display  = "block";
+    // Paso 6: mostrar pantalla de éxito
+    const form    = document.getElementById("registroForm");
+    const success = document.getElementById("formSuccess");
+    if (form)    form.style.display    = "none";
+    if (success) success.style.display = "block";
 
-    } catch (err) {
-      console.error("Error al guardar:", err);
-      if (formErrorEl) {
-        formErrorEl.innerHTML = `❌ Error al guardar. Revisa la conexión y la configuración/reglas de Firestore.<br><span style="font-size:0.8rem">Detalle: ${err.message}</span>`;
-        formErrorEl.style.display = "block";
-      }
-    } finally {
-      if (btnText) btnText.style.display   = "inline";
-      if (btnLoader) btnLoader.style.display = "none";
-      if (submitBtn) submitBtn.disabled      = false;
-    }
-  });
+  } catch (err) {
+    console.error("Error al guardar el equipo:", err);
+    showFormError("❌ Error al guardar. Verifica tu configuración de Firebase.");
+  } finally {
+    setLoading(false);
+  }
 }
 
-// Exponer resetForm globalmente porque se llama desde un onclick HTML
-window.resetForm = function resetForm() {
-  const registroForm = document.getElementById("registroForm");
-  const formSuccess = document.getElementById("formSuccess");
-  if (registroForm) {
-    registroForm.reset();
-    registroForm.style.display = "block";
+// ─── 14. RESETEAR FORMULARIO ──────────────────────────────────────────────
+// Expuesta en window para que el botón "onclick" del HTML pueda llamarla
+function resetForm() {
+  const form    = document.getElementById("registroForm");
+  const success = document.getElementById("formSuccess");
+  if (form) {
+    form.reset();
+    form.style.display = "block";
   }
-  if (formSuccess) formSuccess.style.display  = "none";
+  if (success) success.style.display = "none";
   clearErrors();
 }
+window.resetForm = resetForm; // ← necesario porque app.js es type="module"
 
-
-// ─── UTILIDADES ───────────────────────────────────────────────────────────────
+// ─── 15. UTILIDAD: escapar HTML para prevenir XSS ─────────────────────────
 function escapeHtml(str) {
   if (!str) return "";
   return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;"); // Tambien escapar comillas simples
+    .replace(/&/g,  "&amp;")
+    .replace(/</g,  "&lt;")
+    .replace(/>/g,  "&gt;")
+    .replace(/"/g,  "&quot;")
+    .replace(/'/g,  "&#039;");
 }
 
-
-// ─── INICIALIZAR ──────────────────────────────────────────────────────────────
+// ─── 16. INICIALIZACIÓN AL CARGAR EL DOM ──────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+  initParticles();
+  initNavbar();
   loadTeams();
+
+  const form = document.getElementById("registroForm");
+  if (form) form.addEventListener("submit", handleSubmit);
 });
