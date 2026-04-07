@@ -1,0 +1,40 @@
+// =====================================================================
+// firestore.rules — Reglas de seguridad para Firestore
+// Copia y pega esto en Firebase Console → Firestore → Reglas
+// =====================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /equipos/{docId} {
+
+      // Cualquiera puede leer los equipos (lista pública)
+      allow read: if true;
+
+      // Solo se puede crear si el documento tiene los campos mínimos
+      // y el torneo no está lleno (la lógica de límite está en el frontend,
+      // pero esta regla previene escrituras maliciosas directas a la API)
+      allow create: if
+        request.resource.data.teamName is string &&
+        request.resource.data.teamName.size() >= 2 &&
+        request.resource.data.captain is string &&
+        request.resource.data.captain.size() >= 1 &&
+        request.resource.data.players is list &&
+        request.resource.data.players.size() == 5;
+
+      // Nadie puede editar ni borrar equipos desde el cliente
+      allow update, delete: if false;
+    }
+  }
+}
+
+
+// =====================================================================
+// INSTRUCCIONES:
+// 1. Ve a https://console.firebase.google.com/
+// 2. Selecciona tu proyecto
+// 3. Firestore Database → pestaña "Reglas"
+// 4. Borra lo que hay y pega el contenido de arriba (sin las líneas //)
+// 5. Clic en "Publicar"
+// =====================================================================
