@@ -40,18 +40,18 @@ import {
 // ─── CONFIGURACIÓN FIREBASE ────────────────────────────────────────────────────
 // ✅ Tus credenciales reales ya están aquí
 const firebaseConfig = {
-  apiKey:            "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
-  authDomain:        "torneo-de-dotita.firebaseapp.com",
-  projectId:         "torneo-de-dotita",
-  storageBucket:     "torneo-de-dotita.appspot.com",
+  apiKey: "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
+  authDomain: "torneo-de-dotita.firebaseapp.com",
+  projectId: "torneo-de-dotita",
+  storageBucket: "torneo-de-dotita.firebasestorage.app",
   messagingSenderId: "958554768082",
-  appId:             "1:958554768082:web:fb613bce7b756bdd7da30b"
+  appId: "1:958554768082:web:fb613bce7b756bdd7da30b",
+  measurementId: "G-RTVLG14J1Q"
 };
 
-// ─── INICIALIZAR (MODULAR CORRECTO) ───────────────────────────────────────────
-const app  = initializeApp(firebaseConfig);  // ✅ NO firebase.initializeApp()
-const auth = getAuth(app);
-const db   = getFirestore(app);              // ✅ NO firebase.firestore()
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const COLLECTION = "equipos";
