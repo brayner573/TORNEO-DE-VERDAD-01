@@ -10,74 +10,66 @@
 </head>
 <body>
 
-  <!-- PARTICLES -->
   <canvas id="particles"></canvas>
 
-  <!-- ══════════════════════════════════════════
-       MODAL DE AUTENTICACIÓN
-  ══════════════════════════════════════════ -->
   <div id="authOverlay" class="auth-overlay">
     <div class="auth-modal">
       <div class="auth-logo">⚔ DOTA 2 OPEN</div>
       <p class="auth-sub">Accede para participar en el torneo</p>
 
-      <!-- Tabs -->
       <div class="auth-tabs">
-        <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Iniciar Sesión</button>
-        <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Registrarse</button>
+        <button type="button" class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Iniciar Sesión</button>
+        <button type="button" class="auth-tab" id="tabRegister" onclick="switchTab('register')">Registrarse</button>
       </div>
 
-      <!-- LOGIN -->
-      <div id="panelLogin" class="auth-panel">
+      <form id="panelLogin" class="auth-panel" onsubmit="event.preventDefault(); handleLogin();">
         <div class="form-group">
           <label>📧 Correo electrónico</label>
-          <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email"/>
+          <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email" required/>
           <span class="error-msg" id="err-loginEmail"></span>
         </div>
         <div class="form-group">
           <label>🔒 Contraseña</label>
-          <input type="password" id="loginPassword" placeholder="Tu contraseña" autocomplete="current-password"/>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" autocomplete="current-password" required/>
           <span class="error-msg" id="err-loginPassword"></span>
         </div>
         <div id="loginError" class="form-error" style="display:none;"></div>
-        <button class="btn-primary full" id="btnLogin" onclick="handleLogin()">
+        
+        <button type="submit" class="btn-primary full" id="btnLogin">
           <span id="loginBtnText">⚔ Ingresar</span>
           <span id="loginBtnLoader" style="display:none;">⏳ Ingresando...</span>
         </button>
         <p class="auth-switch">¿No tienes cuenta? <a onclick="switchTab('register')">Regístrate aquí</a></p>
-      </div>
+      </form>
 
-      <!-- REGISTER -->
-      <div id="panelRegister" class="auth-panel" style="display:none;">
+      <form id="panelRegister" class="auth-panel" style="display:none;" onsubmit="event.preventDefault(); handleRegister();">
         <div class="form-group">
           <label>👤 Nombre de usuario</label>
-          <input type="text" id="regName" placeholder="Tu nombre o apodo" maxlength="30"/>
+          <input type="text" id="regName" placeholder="Tu nombre o apodo" maxlength="30" required/>
           <span class="error-msg" id="err-regName"></span>
         </div>
         <div class="form-group">
           <label>📧 Correo electrónico</label>
-          <input type="email" id="regEmail" placeholder="tu@correo.com" autocomplete="email"/>
+          <input type="email" id="regEmail" placeholder="tu@correo.com" autocomplete="email" required/>
           <span class="error-msg" id="err-regEmail"></span>
         </div>
         <div class="form-group">
           <label>🔒 Contraseña</label>
-          <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/>
+          <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required/>
           <span class="error-msg" id="err-regPassword"></span>
         </div>
         <div id="registerError" class="form-error" style="display:none;"></div>
-        <button class="btn-primary full" id="btnRegister" onclick="handleRegister()">
+        
+        <button type="submit" class="btn-primary full" id="btnRegister">
           <span id="registerBtnText">🛡 Crear Cuenta</span>
           <span id="registerBtnLoader" style="display:none;">⏳ Creando...</span>
         </button>
         <p class="auth-switch">¿Ya tienes cuenta? <a onclick="switchTab('login')">Inicia sesión</a></p>
-      </div>
+      </form>
 
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       NAVBAR
-  ══════════════════════════════════════════ -->
   <nav class="navbar">
     <div class="nav-logo">⚔ DOTA 2 OPEN</div>
     <ul class="nav-links">
@@ -88,7 +80,6 @@
       <li><a href="#equipos">Equipos</a></li>
     </ul>
     <div class="nav-right">
-      <!-- Estado de usuario (se llena desde JS) -->
       <div id="userStatus" class="user-status" style="display:none;">
         <span class="user-avatar" id="userAvatar">?</span>
         <span class="user-name" id="userName">Usuario</span>
@@ -100,9 +91,6 @@
     </div>
   </nav>
 
-  <!-- ══════════════════════════════════════════
-       HERO
-  ══════════════════════════════════════════ -->
   <section class="hero" id="inicio">
     <div class="hero-glow"></div>
     <div class="hero-content">
@@ -139,9 +127,6 @@
     <div class="hero-deco right">⬡</div>
   </section>
 
-  <!-- ══════════════════════════════════════════
-       PREMIOS
-  ══════════════════════════════════════════ -->
   <section class="section" id="premios">
     <div class="container">
       <h2 class="section-title">🏆 Premios</h2>
@@ -173,9 +158,6 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════════════════
-       REGLAS
-  ══════════════════════════════════════════ -->
   <section class="section dark" id="reglas">
     <div class="container">
       <h2 class="section-title">📜 Reglas del Torneo</h2>
@@ -215,24 +197,19 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════════════════
-       REGISTRO DE EQUIPO
-  ══════════════════════════════════════════ -->
   <section class="section" id="registro">
     <div class="container">
       <h2 class="section-title">⚔ Registrar Equipo</h2>
       <p class="section-sub">Completa el formulario para unirte al torneo</p>
 
-      <!-- Banner: necesita login -->
       <div id="loginRequired" class="login-required-banner" style="display:none;">
         <span>🔒 Debes iniciar sesión para registrar tu equipo</span>
-        <button class="btn-primary" onclick="document.getElementById('authOverlay').style.display='flex'">
+        <button type="button" class="btn-primary" onclick="document.getElementById('authOverlay').style.display='flex'">
           Iniciar Sesión
         </button>
       </div>
 
-      <div class="form-wrapper" id="formWrapper">
-        <!-- Banner equipo ya registrado -->
+      <div class="form-wrapper" id="formWrapper" style="display:none;">
         <div id="alreadyRegistered" class="already-registered" style="display:none;">
           <div class="success-icon">🛡</div>
           <h3>¡Ya tienes un equipo inscrito!</h3>
@@ -241,7 +218,6 @@
              target="_blank" class="btn-whatsapp big">📲 Ir al Grupo WhatsApp</a>
         </div>
 
-        <!-- Éxito tras registrar -->
         <div id="formSuccess" class="form-success" style="display:none;">
           <div class="success-icon">✅</div>
           <h3>¡Equipo registrado con éxito!</h3>
@@ -250,7 +226,6 @@
              target="_blank" class="btn-whatsapp big">📲 Unirse al Grupo WhatsApp</a>
         </div>
 
-        <!-- Formulario principal -->
         <form id="registroForm" novalidate>
           <div class="form-group">
             <label for="teamName">🛡 Nombre del Equipo *</label>
@@ -270,11 +245,11 @@
           <div class="form-group">
             <label>⚔ Jugadores (5 titulares) *</label>
             <div class="players-grid">
-              <div><input type="text" class="player-input" placeholder="Jugador 1" data-idx="0"/><span class="error-msg" id="err-p0"></span></div>
-              <div><input type="text" class="player-input" placeholder="Jugador 2" data-idx="1"/><span class="error-msg" id="err-p1"></span></div>
-              <div><input type="text" class="player-input" placeholder="Jugador 3" data-idx="2"/><span class="error-msg" id="err-p2"></span></div>
-              <div><input type="text" class="player-input" placeholder="Jugador 4" data-idx="3"/><span class="error-msg" id="err-p3"></span></div>
-              <div><input type="text" class="player-input" placeholder="Jugador 5" data-idx="4"/><span class="error-msg" id="err-p4"></span></div>
+              <div><input type="text" class="player-input" id="p0" placeholder="Jugador 1"/><span class="error-msg" id="err-p0"></span></div>
+              <div><input type="text" class="player-input" id="p1" placeholder="Jugador 2"/><span class="error-msg" id="err-p1"></span></div>
+              <div><input type="text" class="player-input" id="p2" placeholder="Jugador 3"/><span class="error-msg" id="err-p2"></span></div>
+              <div><input type="text" class="player-input" id="p3" placeholder="Jugador 4"/><span class="error-msg" id="err-p3"></span></div>
+              <div><input type="text" class="player-input" id="p4" placeholder="Jugador 5"/><span class="error-msg" id="err-p4"></span></div>
             </div>
           </div>
           <div class="form-group">
@@ -294,9 +269,6 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════════════════
-       EQUIPOS INSCRITOS
-  ══════════════════════════════════════════ -->
   <section class="section dark" id="equipos">
     <div class="container">
       <h2 class="section-title">🛡 Equipos Inscritos</h2>
@@ -307,7 +279,6 @@
     </div>
   </section>
 
-  <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-content">
       <p class="footer-logo">⚔ DOTA 2 OPEN</p>
@@ -319,7 +290,6 @@
     </div>
   </footer>
 
-  <!-- app.js como módulo ES6 (obligatorio para Firebase modular) -->
   <script type="module" src="app.js"></script>
 
 </body>
