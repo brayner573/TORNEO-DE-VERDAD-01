@@ -7,23 +7,24 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebas
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 // Tu configuración de Firebase proporcionada
+// CONFIG FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCK689qDC94UAo2fCqkeWU-z_Q3HD_yKEY",
   authDomain: "torneo-de-dotita.firebaseapp.com",
   projectId: "torneo-de-dotita",
-  storageBucket: "torneo-de-dotita.firebasestorage.app",
+  storageBucket: "torneo-de-dotita.appspot.com",
   messagingSenderId: "958554768082",
-  appId: "1:958554768082:web:fb613bce7b756bdd7da30b",
-  measurementId: "G-RTVLG14J1Q"
+  appId: "1:958554768082:web:fb613bce7b756bdd7da30b"
 };
+
+// INICIALIZAR FIREBASE
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 const WHATSAPP_URL = "https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t";
 const MAX_TEAMS = 16;
 const COLLECTION_NAME = "equipos"; // Nombre de la colección en Firestore
 
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // ─── PARTICLES BACKGROUND ─────────────────────────────────────────────────────
 (function initParticles() {
