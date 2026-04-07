@@ -7,6 +7,36 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
+  
+  <style>
+    .social-buttons-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .btn-kick {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background-color: #53fc18; color: #000; font-family: 'Rajdhani', sans-serif; font-weight: 700; 
+      text-decoration: none; padding: 0.8rem 1.5rem; border-radius: 6px; transition: all 0.3s ease;
+    }
+    .btn-kick:hover {
+      box-shadow: 0 0 15px rgba(83, 252, 24, 0.6); transform: translateY(-2px);
+    }
+    .btn-kick .kick-logo {
+      font-family: Arial, sans-serif; font-weight: 900; font-style: italic; letter-spacing: -0.5px;
+    }
+    .btn-tiktok {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background-color: #000; color: #fff; font-family: 'Rajdhani', sans-serif; font-weight: 700;
+      text-decoration: none; padding: 0.8rem 1.5rem; border-radius: 6px; transition: all 0.3s ease;
+      border: 1px solid #333;
+    }
+    .btn-tiktok:hover {
+      box-shadow: 0 0 15px rgba(255, 0, 80, 0.6); transform: translateY(-2px); border-color: #ff0050;
+    }
+  </style>
 </head>
 <body>
 
@@ -94,10 +124,10 @@
   <section class="hero" id="inicio">
     <div class="hero-glow"></div>
     <div class="hero-content">
-      <div class="hero-badge">TORNEO OFICIAL 2025</div>
+      <div class="hero-badge">TORNEO OFICIAL 2026</div>
       <h1 class="hero-title">
         <span class="title-line">LA BATALLA</span>
-        <span class="title-line accent">FINAL</span>
+        <span class="title-line accent">DE CARRERAS UNIVERSITARIAS</span>
       </h1>
       <p class="hero-subtitle">El torneo más épico de Dota 2 está aquí.<br/>¿Tienes lo que se necesita para conquistar el trono?</p>
 
@@ -118,10 +148,20 @@
 
       <div class="hero-cta">
         <a href="#registro" class="btn-primary">⚔ Registrar Equipo</a>
+      </div>
+      
+      <div class="social-buttons-container">
         <a href="https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t" target="_blank" class="btn-whatsapp">
           📲 Grupo WhatsApp
         </a>
+        <a href="https://kick.com/brayner45" target="_blank" class="btn-kick">
+          <span class="kick-logo">KICK</span> brayner45
+        </a>
+        <a href="https://www.tiktok.com/@brayner722" target="_blank" class="btn-tiktok">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 448 512"><path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25V349.38A162.55 162.55 0 1 1 185 188.31V278.2a74.62 74.62 0 1 0 52.23 71.18V0l88 0a121.18 121.18 0 0 0 1.86 22.17h0A122.18 122.18 0 0 0 381 102.39a121.43 121.43 0 0 0 67 20.14Z"/></svg> brayner722
+        </a>
       </div>
+
     </div>
     <div class="hero-deco left">⬡</div>
     <div class="hero-deco right">⬡</div>
@@ -283,9 +323,19 @@
     <div class="footer-content">
       <p class="footer-logo">⚔ DOTA 2 OPEN</p>
       <p class="footer-sub">Torneo organizado con pasión por la comunidad</p>
-      <a href="https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t" target="_blank" class="btn-whatsapp">
-        📲 Unirse al Grupo WhatsApp
-      </a>
+      
+      <div class="social-buttons-container" style="margin-bottom: 1.5rem;">
+        <a href="https://chat.whatsapp.com/EDLgOCOg7dACXYFtHRhDIu?mode=gi_t" target="_blank" class="btn-whatsapp">
+          📲 Grupo WhatsApp
+        </a>
+        <a href="https://kick.com/brayner45" target="_blank" class="btn-kick">
+          <span class="kick-logo">KICK</span> brayner45
+        </a>
+        <a href="https://www.tiktok.com/@brayner722" target="_blank" class="btn-tiktok">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 448 512"><path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25V349.38A162.55 162.55 0 1 1 185 188.31V278.2a74.62 74.62 0 1 0 52.23 71.18V0l88 0a121.18 121.18 0 0 0 1.86 22.17h0A122.18 122.18 0 0 0 381 102.39a121.43 121.43 0 0 0 67 20.14Z"/></svg> brayner722
+        </a>
+      </div>
+
       <p class="footer-copy">© 2025 Dota 2 Open Tournament · Todos los derechos reservados</p>
     </div>
   </footer>
