@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bracket Torneo Pro Visual</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a31;
+      --panel-2: #0f172a;
+      --text: #e5eefc;
+      --muted: #94a3b8;
+      --upper: #38bdf8;
+      --lower: #f43f5e;
+      --gold: #fbbf24;
+      --line: #64748b;
+      --green: #22c55e;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,.08), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(244,63,94,.08), transparent 28%),
+        linear-gradient(180deg, #0b1020 0%, #0a0f1d 100%);
+      color: var(--text);
+      font-family: Inter, Arial, Helvetica, sans-serif;
+    }
+
+    .wrap {
+      width: 2000px;
+      min-height: 1180px;
+      padding: 28px;
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .title {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--muted);
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-weight: 600;
+    }
+
+    .board {
+      position: relative;
+      width: 1940px;
+      height: 1060px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    .section-label {
+      position: absolute;
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.1);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      box-shadow: var(--shadow);
+    }
+
+    .upper-label { border-left: 5px solid var(--upper); }
+    .lower-label { border-left: 5px solid var(--lower); }
+    .final-label { border-left: 5px solid var(--gold); }
+    .extra-label { border-left: 5px solid var(--green); }
+
+    .match {
+      position: absolute;
+      width: 300px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(18,26,49,.96), rgba(15,23,42,.96));
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .match.upper { box-shadow: 0 0 0 1px rgba(56,189,248,.18), var(--shadow); }
+    .match.lower { box-shadow: 0 0 0 1px rgba(244,63,94,.18), var(--shadow); }
+    .match.final { box-shadow: 0 0 0 1px rgba(251,191,36,.24), var(--shadow); }
+    .match.extra { box-shadow: 0 0 0 1px rgba(34,197,94,.22), var(--shadow); }
+
+    .team {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 23px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .team:last-child { border-bottom: none; }
+
+    .team small {
+      display: inline-block;
+      margin-left: 8px;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .seed {
+      position: absolute;
+      left: -52px;
+      top: 26px;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      background: rgba(255,255,255,.08);
+      color: white;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    svg.lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .legend {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      width: 300px;
+      background: rgba(8,12,24,.9);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .legend h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .legend .item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+    }
+
+    .note {
+      position: absolute;
+      right: 24px;
+      top: 24px;
+      background: rgba(8,12,24,.88);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 14px 16px;
+      width: 330px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .note b { color: white; }
+  
+
+    .dashboard-shell {
+      margin-top: 28px;
+      width: 1940px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .dashboard-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+
+    .dashboard-subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.2fr 1fr;
+      gap: 18px;
+    }
+
+    .dash-card {
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(18,26,49,.96), rgba(15,23,42,.96));
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .dash-head {
+      padding: 16px 18px;
+      font-size: 18px;
+      font-weight: 800;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .dash-head.upper { border-left: 5px solid var(--upper); }
+    .dash-head.lower { border-left: 5px solid var(--lower); }
+    .dash-head.final { border-left: 5px solid var(--gold); }
+    .dash-head.extra { border-left: 5px solid var(--green); }
+
+    .dash-body {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .edit-box {
+      min-height: 64px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.03);
+      border: 1px dashed rgba(255,255,255,.14);
+      color: var(--text);
+      outline: none;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+
+    .edit-box[contenteditable="true"]:focus {
+      border-color: rgba(255,255,255,.28);
+      background: rgba(255,255,255,.05);
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .result-tag {
+      border-radius: 12px;
+      padding: 10px 12px;
+      text-align: center;
+      font-weight: 800;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--muted);
+    }
+
+    .mini-note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .full-span { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">Bracket Pro Visual · Torneo UPeU</div>
+      <div class="badge">Upper + Lower + Eliminación directa</div>
+    </div>
+
+    <div class="board">
+      <div class="grid"></div>
+
+      <div class="note"><b>Regla especial:</b> el ganador de la eliminación directa entra al Lower Bracket. El perdedor queda fuera del torneo.</div>
+
+      <div class="section-label upper-label" style="left:28px; top:26px;">Upper Bracket · Ronda 1</div>
+      <div class="section-label upper-label" style="left:430px; top:26px;">Upper Bracket · Ronda 2</div>
+      <div class="section-label upper-label" style="left:830px; top:26px;">Upper Bracket · Semifinales</div>
+      <div class="section-label final-label" style="left:1220px; top:26px;">Final Upper</div>
+      <div class="section-label final-label" style="left:1620px; top:26px;">Gran Final</div>
+
+      <div class="section-label lower-label" style="left:28px; top:548px;">Lower Bracket · Ronda 1</div>
+      <div class="section-label lower-label" style="left:430px; top:548px;">Lower Bracket · Ronda 2</div>
+      <div class="section-label lower-label" style="left:830px; top:548px;">Lower Bracket · Ronda 3</div>
+      <div class="section-label lower-label" style="left:1210px; top:548px;">Lower · Semifinal / Final</div>
+      <div class="section-label extra-label" style="left:1510px; top:700px;">Eliminación directa</div>
+
+      <svg class="lines" viewBox="0 0 1940 1060" preserveAspectRatio="none">
+        <!-- upper -->
+        <path d="M328 142 H385 V184 H430" stroke="#7dd3fc" stroke-width="4" fill="none" />
+        <path d="M328 242 H385 V204 H430" stroke="#7dd3fc" stroke-width="4" fill="none" />
+        <path d="M328 342 H385 V384 H430" stroke="#7dd3fc" stroke-width="4" fill="none" />
+        <path d="M328 442 H385 V404 H430" stroke="#7dd3fc" stroke-width="4" fill="none" />
+        <path d="M328 542 H385 V584 H430" stroke="#7dd3fc" stroke-width="4" fill="none" />
+        <path d="M328 642 H385 V604 H430" stroke="#7dd3fc" stroke-width="4" fill="none" />
+
+        <path d="M730 204 H790 V254 H830" stroke="#7dd3fc" stroke-width="4" fill="none" />
+        <path d="M730 404 H790 V274 H830" stroke="#7dd3fc" stroke-width="4" fill="none" />
+        <path d="M730 604 H790 V454 H830" stroke="#7dd3fc" stroke-width="4" fill="none" />
+
+        <path d="M1130 274 H1180 V354 H1220" stroke="#fbbf24" stroke-width="4" fill="none" />
+        <path d="M1130 454 H1180 V374 H1220" stroke="#fbbf24" stroke-width="4" fill="none" />
+
+        <!-- lower round1 to round2 -->
+        <path d="M348 664 H390 V684 H430" stroke="#fb7185" stroke-width="4" fill="none" />
+        <path d="M348 764 H390 V704 H430" stroke="#fb7185" stroke-width="4" fill="none" />
+        <path d="M348 864 H390 V884 H430" stroke="#fb7185" stroke-width="4" fill="none" />
+
+        <!-- round2 to round3 -->
+        <path d="M730 684 H780 V724 H830" stroke="#fb7185" stroke-width="4" fill="none" />
+        <path d="M730 784 H780 V744 H830" stroke="#fb7185" stroke-width="4" fill="none" />
+        <path d="M730 884 H780 V904 H830" stroke="#fb7185" stroke-width="4" fill="none" />
+
+        <!-- round3 to lower semi -->
+        <path d="M1130 744 H1180 V794 H1210" stroke="#fb7185" stroke-width="4" fill="none" />
+        <path d="M1130 904 H1180 V814 H1210" stroke="#fb7185" stroke-width="4" fill="none" />
+
+        <!-- lower final to grand final -->
+        <path d="M1510 814 H1560 V424 H1620" stroke="#fbbf24" stroke-width="4" fill="none" />
+        <path d="M1520 354 H1570 V404 H1620" stroke="#fbbf24" stroke-width="4" fill="none" />
+
+        <!-- extra match to lower -->
+        <path d="M1810 804 H1760 V904 H1130" stroke="#22c55e" stroke-width="5" fill="none" />
+      </svg>
+
+      <!-- Upper R1 -->
+      <div class="match upper" style="left:28px; top:110px;"><div class="seed">M1</div><div class="team">TEAM VENECIA 💦</div><div class="team">VILCHEZ EA SPORTS</div></div>
+      <div class="match upper" style="left:28px; top:210px;"><div class="seed">M2</div><div class="team">ALBINOS <small>Ambiental · UPeU</small></div><div class="team">Malditos de Huaraz <small>Civil</small></div></div>
+      <div class="match upper" style="left:28px; top:310px;"><div class="seed">M3</div><div class="team">Changuipanas <small>Psicología</small></div><div class="team">Catadores de kines <small>Hidráulica</small></div></div>
+      <div class="match upper" style="left:28px; top:410px;"><div class="seed">M4</div><div class="team">Lag y fé <small>Ing. Ambiental</small></div><div class="team">Team No Mercy <small>Ing. Ambiental</small></div></div>
+      <div class="match upper" style="left:28px; top:510px;"><div class="seed">M5</div><div class="team">Fusion Academy <small>Ing. Renovables</small></div><div class="team">Team Backyardigans <small>Ambiental</small></div></div>
+      <div class="match upper" style="left:28px; top:610px;"><div class="seed">M6</div><div class="team">Pikachus <small>Ind. Alimentarias</small></div><div class="team">Los Moticucos <small>Ing. Sistemas</small></div></div>
+
+      <!-- Upper R2 -->
+      <div class="match upper" style="left:430px; top:158px;"><div class="team">Ganador M1</div><div class="team">Ganador M2</div></div>
+      <div class="match upper" style="left:430px; top:358px;"><div class="team">Ganador M3</div><div class="team">Ganador M4</div></div>
+      <div class="match upper" style="left:430px; top:558px;"><div class="team">Ganador M5</div><div class="team">Ganador M6</div></div>
+
+      <!-- Upper Semis -->
+      <div class="match upper" style="left:830px; top:228px;"><div class="team">Ganador Q1</div><div class="team">Ganador Q2</div></div>
+      <div class="match upper" style="left:830px; top:408px;"><div class="team">Ganador Q3</div><div class="team">Mejor ganador <small>BYE</small></div></div>
+
+      <!-- Final upper -->
+      <div class="match final" style="left:1220px; top:308px;"><div class="team">Ganador SF1</div><div class="team">Ganador SF2</div></div>
+
+      <!-- Grand final -->
+      <div class="match final" style="left:1620px; top:378px;"><div class="team">Ganador Upper</div><div class="team">Ganador Lower</div></div>
+
+      <!-- Lower R1 -->
+      <div class="match lower" style="left:28px; top:632px;"><div class="seed">LB1</div><div class="team">Perdedor M1</div><div class="team">Perdedor M2</div></div>
+      <div class="match lower" style="left:28px; top:732px;"><div class="seed">LB2</div><div class="team">Perdedor M3</div><div class="team">Perdedor M4</div></div>
+      <div class="match lower" style="left:28px; top:832px;"><div class="seed">LB3</div><div class="team">Perdedor M5</div><div class="team">Perdedor M6</div></div>
+
+      <!-- Lower R2 -->
+      <div class="match lower" style="left:430px; top:658px;"><div class="team">Ganador LB1</div><div class="team">Perdedor Q1</div></div>
+      <div class="match lower" style="left:430px; top:758px;"><div class="team">Ganador LB2</div><div class="team">Perdedor Q2</div></div>
+      <div class="match lower" style="left:430px; top:858px;"><div class="team">Ganador LB3</div><div class="team">Perdedor Q3</div></div>
+
+      <!-- Lower R3 -->
+      <div class="match lower" style="left:830px; top:698px;"><div class="team">Ganador LB4</div><div class="team">Ganador LB5</div></div>
+      <div class="match lower" style="left:830px; top:858px;"><div class="team">Ganador LB6</div><div class="team">Ganador ELIM</div></div>
+
+      <!-- Lower final -->
+      <div class="match lower" style="left:1210px; top:778px;"><div class="team">Ganador LB7</div><div class="team">Ganador LB8</div></div>
+
+      <!-- Extra -->
+      <div class="match extra" style="left:1510px; top:748px; width: 360px;"><div class="team">Team Agarra potos <small>Ing. Sistemas</small></div><div class="team">Los Incarreables <small>Civil</small></div></div>
+
+      <div class="legend">
+        <h3>Leyenda</h3>
+        <div class="item"><span class="dot" style="background:#38bdf8"></span> Upper Bracket</div>
+        <div class="item"><span class="dot" style="background:#f43f5e"></span> Lower Bracket</div>
+        <div class="item"><span class="dot" style="background:#fbbf24"></span> Finales</div>
+        <div class="item"><span class="dot" style="background:#22c55e"></span> Ganador de eliminación directa entra al Lower</div>
+      </div>
+    </div>
+      <section class="dashboard-shell">
+      <div class="dashboard-header">
+        <div>
+          <div class="dashboard-title">Dashboard editable (vista previa)</div>
+          <div class="dashboard-subtitle">Se agregó aparte. El bracket original no se tocó.</div>
+        </div>
+        <div class="badge">Campos listos para editar</div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dash-card">
+          <div class="dash-head upper">Resultados Upper Bracket</div>
+          <div class="dash-body">
+            <div class="result-row"><div class="result-tag">M1</div><div class="edit-box" contenteditable="true">Escribe aquí el ganador, marcador o notas del Match 1.</div></div>
+            <div class="result-row"><div class="result-tag">M2</div><div class="edit-box" contenteditable="true">Escribe aquí el ganador, marcador o notas del Match 2.</div></div>
+            <div class="result-row"><div class="result-tag">M3</div><div class="edit-box" contenteditable="true">Escribe aquí el ganador, marcador o notas del Match 3.</div></div>
+            <div class="result-row"><div class="result-tag">M4</div><div class="edit-box" contenteditable="true">Escribe aquí el ganador, marcador o notas del Match 4.</div></div>
+            <div class="result-row"><div class="result-tag">M5</div><div class="edit-box" contenteditable="true">Escribe aquí el ganador, marcador o notas del Match 5.</div></div>
+            <div class="result-row"><div class="result-tag">M6</div><div class="edit-box" contenteditable="true">Escribe aquí el ganador, marcador o notas del Match 6.</div></div>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-head lower">Seguimiento Lower Bracket</div>
+          <div class="dash-body">
+            <div class="result-row"><div class="result-tag">LB1</div><div class="edit-box" contenteditable="true">Escribe aquí el resultado de Lower 1.</div></div>
+            <div class="result-row"><div class="result-tag">LB2</div><div class="edit-box" contenteditable="true">Escribe aquí el resultado de Lower 2.</div></div>
+            <div class="result-row"><div class="result-tag">LB3</div><div class="edit-box" contenteditable="true">Escribe aquí el resultado de Lower 3.</div></div>
+            <div class="result-row"><div class="result-tag">FIN</div><div class="edit-box" contenteditable="true">Escribe aquí el resultado de la Final Lower y quién sube a la Gran Final.</div></div>
+            <div class="result-row"><div class="result-tag">ELIM</div><div class="edit-box" contenteditable="true">Escribe aquí el ganador de Team Agarra potos vs Los Incarreables. Recuerda: el ganador entra al Lower y el perdedor se elimina.</div></div>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-head final">Panel de control</div>
+          <div class="dash-body">
+            <div class="two-col full-span">
+              <div class="edit-box" contenteditable="true">Gran Final:
+Equipo Upper:</div>
+              <div class="edit-box" contenteditable="true">Gran Final:
+Equipo Lower:</div>
+            </div>
+            <div class="edit-box full-span" contenteditable="true">Campeón del torneo:</div>
+            <div class="edit-box full-span" contenteditable="true">Subcampeón del torneo:</div>
+            <div class="edit-box full-span" contenteditable="true">Notas generales, horarios, caster, stream o cambios importantes.</div>
+            <div class="dash-head extra" style="border-radius:14px; padding:12px 14px; font-size:16px;">Regla fija</div>
+            <div class="mini-note">El ganador de eliminación directa entra al Lower Bracket. El perdedor queda eliminado del torneo.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
