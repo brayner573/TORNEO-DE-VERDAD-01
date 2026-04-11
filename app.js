@@ -687,89 +687,116 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ================= DASHBOARD =================
-const addBoxBtn = document.getElementById("addBoxBtn");
-const dashboardList = document.getElementById("dashboardList");
+document.addEventListener("DOMContentLoaded", () => {
+  const addBoxBtn = document.getElementById("addBoxBtn");
+  const dashboardList = document.getElementById("dashboardList");
 
-let dashboardItems = JSON.parse(localStorage.getItem("dashboardItems")) || [];
+  if (!addBoxBtn || !dashboardList) {
+    console.log("Dashboard no encontrado en el HTML");
+    return;
+  }
 
-function saveDashboard() {
-  localStorage.setItem("dashboardItems", JSON.stringify(dashboardItems));
-}
+  let dashboardItems = JSON.parse(localStorage.getItem("dashboardItems")) || [];
 
-function renderDashboard() {
-  if (!dashboardList) return;
+  function saveDashboard() {
+    localStorage.setItem("dashboardItems", JSON.stringify(dashboardItems));
+  }
 
-  dashboardList.innerHTML = "";
+  function renderDashboard() {
+    dashboardList.innerHTML = "";
 
-  dashboardItems.forEach((item, index) => {
-    const box = document.createElement("div");
-    box.style.marginBottom = "15px";
-    box.style.padding = "15px";
-    box.style.border = "1px solid rgba(255,255,255,0.1)";
-    box.style.borderRadius = "10px";
-
-    if (item.editing) {
-      box.innerHTML = `
-        <input type="text" value="${item.title || ""}" placeholder="Título" style="width:100%;margin-bottom:10px;">
-        <input type="text" value="${item.content || ""}" placeholder="Contenido" style="width:100%;margin-bottom:10px;">
-        <button class="btn-primary">Guardar</button>
-        <button style="background:orange;">Cancelar</button>
-        <button style="background:red;color:white;">Eliminar</button>
-      `;
-
-      const inputs = box.querySelectorAll("input");
-
-      inputs[0].oninput = (e) => item.title = e.target.value;
-      inputs[1].oninput = (e) => item.content = e.target.value;
-
-      box.children[2].onclick = () => {
-        item.editing = false;
-        saveDashboard();
-        renderDashboard();
-      };
-
-      box.children[3].onclick = () => {
-        dashboardItems.splice(index, 1);
-        saveDashboard();
-        renderDashboard();
-      };
-
-      box.children[4].onclick = () => {
-        dashboardItems.splice(index, 1);
-        saveDashboard();
-        renderDashboard();
-      };
-
-    } else {
-      box.innerHTML = `
-        <h3>${item.title || "Sin título"}</h3>
-        <p>${item.content || "Sin contenido"}</p>
-        <button style="background:green;">Editar</button>
-        <button style="background:red;color:white;">Eliminar</button>
-      `;
-
-      box.children[2].onclick = () => {
-        item.editing = true;
-        renderDashboard();
-      };
-
-      box.children[3].onclick = () => {
-        dashboardItems.splice(index, 1);
-        saveDashboard();
-        renderDashboard();
-      };
+    if (dashboardItems.length === 0) {
+      dashboardList.innerHTML = "<p style='opacity:.8;'>No hay casillas todavía.</p>";
+      return;
     }
 
-    dashboardList.appendChild(box);
-  });
-}
+    dashboardItems.forEach((item, index) => {
+      const box = document.createElement("div");
+      box.className = "dashboard-box";
 
-if (addBoxBtn) {
-  addBoxBtn.onclick = () => {
-    dashboardItems.push({ title: "", content: "", editing: true });
+      if (item.editing) {
+        box.innerHTML = `
+          <input type="text" placeholder="Título" value="${item.title || ""}">
+          <textarea placeholder="Contenido">${item.content || ""}</textarea>
+          <button class="btn-primary" type="button">Guardar</button>
+          <button type="button" style="background:orange;">Cancelar</button>
+          <button type="button" style="background:red; color:white;">Eliminar</button>
+        `;
+
+        const titleInput = box.querySelector("input");
+        const contentInput = box.querySelector("textarea");
+        const saveBtn = box.querySelectorAll("button")[0];
+        const cancelBtn = box.querySelectorAll("button")[1];
+        const deleteBtn = box.querySelectorAll("button")[2];
+
+        titleInput.addEventListener("input", (e) => {
+          item.title = e.target.value;
+        });
+
+        contentInput.addEventListener("input", (e) => {
+          item.content = e.target.value;
+        });
+
+        saveBtn.addEventListener("click", () => {
+          item.editing = false;
+          saveDashboard();
+          renderDashboard();
+        });
+
+        cancelBtn.addEventListener("click", () => {
+          if (item.isNew) {
+            dashboardItems.splice(index, 1);
+          } else {
+            item.editing = false;
+          }
+          saveDashboard();
+          renderDashboard();
+        });
+
+        deleteBtn.addEventListener("click", () => {
+          dashboardItems.splice(index, 1);
+          saveDashboard();
+          renderDashboard();
+        });
+
+      } else {
+        box.innerHTML = `
+          <h3>${item.title || "Sin título"}</h3>
+          <p>${item.content || "Sin contenido"}</p>
+          <button type="button" style="background:green; color:white;">Editar</button>
+          <button type="button" style="background:red; color:white;">Eliminar</button>
+        `;
+
+        const editBtn = box.querySelectorAll("button")[0];
+        const deleteBtn = box.querySelectorAll("button")[1];
+
+        editBtn.addEventListener("click", () => {
+          item.editing = true;
+          saveDashboard();
+          renderDashboard();
+        });
+
+        deleteBtn.addEventListener("click", () => {
+          dashboardItems.splice(index, 1);
+          saveDashboard();
+          renderDashboard();
+        });
+      }
+
+      dashboardList.appendChild(box);
+    });
+  }
+
+  addBoxBtn.addEventListener("click", () => {
+    dashboardItems.unshift({
+      title: "",
+      content: "",
+      editing: true,
+      isNew: true
+    });
     saveDashboard();
     renderDashboard();
-  };
-}
+  });
 
-renderDashboard();
+  renderDashboard();
+});
