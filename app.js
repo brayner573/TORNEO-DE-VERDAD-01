@@ -687,7 +687,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================
-   DASHBOARD EDITABLE
+   DASHBOARD TIPO SECCIONES
 ========================= */
 
 (function () {
@@ -695,12 +695,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const addBoxBtn = document.getElementById("addBoxBtn");
     const dashboardList = document.getElementById("dashboardList");
 
-    if (!addBoxBtn || !dashboardList) {
-      console.log("Dashboard no encontrado en el HTML");
-      return;
-    }
+    if (!addBoxBtn || !dashboardList) return;
 
-    const STORAGE_KEY = "dashboard_torneo_items_v1";
+    const STORAGE_KEY = "dashboard_torneo_sections_v2";
     let dashboardItems = [];
 
     function loadDashboardItems() {
@@ -721,16 +718,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    function escapeHtmlDashboard(text) {
+    function escapeHtml(text) {
       const div = document.createElement("div");
       div.textContent = text || "";
       return div.innerHTML;
     }
 
-    function createEmptyCard() {
+    function createEmptySection() {
       return {
         id: Date.now() + Math.random().toString(16).slice(2),
-        title: "",
+        title: "Nueva sección",
         content: "",
         editing: true,
         isNew: true,
@@ -744,41 +741,43 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!dashboardItems.length) {
         dashboardList.innerHTML = `
           <div class="dashboard-empty">
-            Aún no hay casillas creadas. Presiona <strong>+ Agregar casilla</strong>.
+            Aún no hay secciones. Presiona <strong>+ Agregar sección</strong>.
           </div>
         `;
         return;
       }
 
       dashboardItems.forEach((item) => {
-        const card = document.createElement("div");
-        card.className = "dashboard-card";
+        const section = document.createElement("div");
+        section.className = "dashboard-section-item";
 
         if (item.editing) {
-          card.innerHTML = `
-            <input
-              type="text"
-              class="dashboard-input-title"
-              placeholder="Título de la casilla"
-              value="${escapeHtmlDashboard(item.title)}"
-            />
+          section.innerHTML = `
+            <div class="dashboard-editor">
+              <input
+                type="text"
+                class="dashboard-input-title"
+                placeholder="Título de la sección"
+                value="${escapeHtml(item.title)}"
+              />
 
-            <textarea
-              class="dashboard-input-content"
-              placeholder="Escribe aquí el contenido...">${escapeHtmlDashboard(item.content)}</textarea>
+              <textarea
+                class="dashboard-input-content"
+                placeholder="Escribe aquí el contenido...">${escapeHtml(item.content)}</textarea>
 
-            <div class="dashboard-actions">
-              <button type="button" class="dashboard-btn dashboard-btn-save">Guardar</button>
-              <button type="button" class="dashboard-btn dashboard-btn-cancel">Cancelar</button>
-              <button type="button" class="dashboard-btn dashboard-btn-delete">Eliminar</button>
+              <div class="dashboard-actions">
+                <button type="button" class="dashboard-btn dashboard-btn-save">Guardar</button>
+                <button type="button" class="dashboard-btn dashboard-btn-cancel">Cancelar</button>
+                <button type="button" class="dashboard-btn dashboard-btn-delete">Eliminar</button>
+              </div>
             </div>
           `;
 
-          const titleInput = card.querySelector(".dashboard-input-title");
-          const contentInput = card.querySelector(".dashboard-input-content");
-          const saveBtn = card.querySelector(".dashboard-btn-save");
-          const cancelBtn = card.querySelector(".dashboard-btn-cancel");
-          const deleteBtn = card.querySelector(".dashboard-btn-delete");
+          const titleInput = section.querySelector(".dashboard-input-title");
+          const contentInput = section.querySelector(".dashboard-input-content");
+          const saveBtn = section.querySelector(".dashboard-btn-save");
+          const cancelBtn = section.querySelector(".dashboard-btn-cancel");
+          const deleteBtn = section.querySelector(".dashboard-btn-delete");
 
           titleInput.addEventListener("input", (e) => {
             item.title = e.target.value;
@@ -813,28 +812,24 @@ document.addEventListener("DOMContentLoaded", () => {
           });
 
           deleteBtn.addEventListener("click", () => {
-            const confirmDelete = confirm("¿Seguro que quieres eliminar esta casilla?");
-            if (!confirmDelete) return;
-
+            if (!confirm("¿Seguro que quieres eliminar esta sección?")) return;
             dashboardItems = dashboardItems.filter((x) => x.id !== item.id);
             saveDashboardItems();
             renderDashboard();
           });
         } else {
-          card.innerHTML = `
-            <div class="dashboard-card-view-title">${escapeHtmlDashboard(item.title || "Sin título")}</div>
-            <div class="dashboard-card-view-content">${escapeHtmlDashboard(item.content || "Sin contenido")}</div>
-
-            <div class="dashboard-actions">
-              <button type="button" class="dashboard-btn dashboard-btn-edit">Editar</button>
-              <button type="button" class="dashboard-btn dashboard-btn-delete">Eliminar</button>
+          section.innerHTML = `
+            <div class="dashboard-section-title">
+              <span>${escapeHtml(item.title || "Sin título")}</span>
+              <a class="dashboard-edit-link">[ editar ]</a>
             </div>
+            <div class="dashboard-section-line"></div>
+            <div class="dashboard-section-content">${escapeHtml(item.content || "")}</div>
           `;
 
-          const editBtn = card.querySelector(".dashboard-btn-edit");
-          const deleteBtn = card.querySelector(".dashboard-btn-delete");
+          const editLink = section.querySelector(".dashboard-edit-link");
 
-          editBtn.addEventListener("click", () => {
+          editLink.addEventListener("click", () => {
             item.backup = {
               title: item.title,
               content: item.content
@@ -843,29 +838,19 @@ document.addEventListener("DOMContentLoaded", () => {
             saveDashboardItems();
             renderDashboard();
           });
-
-          deleteBtn.addEventListener("click", () => {
-            const confirmDelete = confirm("¿Seguro que quieres eliminar esta casilla?");
-            if (!confirmDelete) return;
-
-            dashboardItems = dashboardItems.filter((x) => x.id !== item.id);
-            saveDashboardItems();
-            renderDashboard();
-          });
         }
 
-        dashboardList.appendChild(card);
+        dashboardList.appendChild(section);
       });
     }
 
     addBoxBtn.addEventListener("click", () => {
-      dashboardItems.unshift(createEmptyCard());
+      dashboardItems.push(createEmptySection());
       saveDashboardItems();
       renderDashboard();
     });
 
     loadDashboardItems();
     renderDashboard();
-    console.log("Dashboard cargado correctamente");
   });
 })();
