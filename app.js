@@ -685,3 +685,91 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAuthUI(user);
   });
 });
+
+// ================= DASHBOARD =================
+const addBoxBtn = document.getElementById("addBoxBtn");
+const dashboardList = document.getElementById("dashboardList");
+
+let dashboardItems = JSON.parse(localStorage.getItem("dashboardItems")) || [];
+
+function saveDashboard() {
+  localStorage.setItem("dashboardItems", JSON.stringify(dashboardItems));
+}
+
+function renderDashboard() {
+  if (!dashboardList) return;
+
+  dashboardList.innerHTML = "";
+
+  dashboardItems.forEach((item, index) => {
+    const box = document.createElement("div");
+    box.style.marginBottom = "15px";
+    box.style.padding = "15px";
+    box.style.border = "1px solid rgba(255,255,255,0.1)";
+    box.style.borderRadius = "10px";
+
+    if (item.editing) {
+      box.innerHTML = `
+        <input type="text" value="${item.title || ""}" placeholder="Título" style="width:100%;margin-bottom:10px;">
+        <input type="text" value="${item.content || ""}" placeholder="Contenido" style="width:100%;margin-bottom:10px;">
+        <button class="btn-primary">Guardar</button>
+        <button style="background:orange;">Cancelar</button>
+        <button style="background:red;color:white;">Eliminar</button>
+      `;
+
+      const inputs = box.querySelectorAll("input");
+
+      inputs[0].oninput = (e) => item.title = e.target.value;
+      inputs[1].oninput = (e) => item.content = e.target.value;
+
+      box.children[2].onclick = () => {
+        item.editing = false;
+        saveDashboard();
+        renderDashboard();
+      };
+
+      box.children[3].onclick = () => {
+        dashboardItems.splice(index, 1);
+        saveDashboard();
+        renderDashboard();
+      };
+
+      box.children[4].onclick = () => {
+        dashboardItems.splice(index, 1);
+        saveDashboard();
+        renderDashboard();
+      };
+
+    } else {
+      box.innerHTML = `
+        <h3>${item.title || "Sin título"}</h3>
+        <p>${item.content || "Sin contenido"}</p>
+        <button style="background:green;">Editar</button>
+        <button style="background:red;color:white;">Eliminar</button>
+      `;
+
+      box.children[2].onclick = () => {
+        item.editing = true;
+        renderDashboard();
+      };
+
+      box.children[3].onclick = () => {
+        dashboardItems.splice(index, 1);
+        saveDashboard();
+        renderDashboard();
+      };
+    }
+
+    dashboardList.appendChild(box);
+  });
+}
+
+if (addBoxBtn) {
+  addBoxBtn.onclick = () => {
+    dashboardItems.push({ title: "", content: "", editing: true });
+    saveDashboard();
+    renderDashboard();
+  };
+}
+
+renderDashboard();
