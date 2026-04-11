@@ -686,117 +686,186 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ================= DASHBOARD =================
-document.addEventListener("DOMContentLoaded", () => {
-  const addBoxBtn = document.getElementById("addBoxBtn");
-  const dashboardList = document.getElementById("dashboardList");
+/* =========================
+   DASHBOARD EDITABLE
+========================= */
 
-  if (!addBoxBtn || !dashboardList) {
-    console.log("Dashboard no encontrado en el HTML");
-    return;
-  }
+(function () {
+  document.addEventListener("DOMContentLoaded", () => {
+    const addBoxBtn = document.getElementById("addBoxBtn");
+    const dashboardList = document.getElementById("dashboardList");
 
-  let dashboardItems = JSON.parse(localStorage.getItem("dashboardItems")) || [];
-
-  function saveDashboard() {
-    localStorage.setItem("dashboardItems", JSON.stringify(dashboardItems));
-  }
-
-  function renderDashboard() {
-    dashboardList.innerHTML = "";
-
-    if (dashboardItems.length === 0) {
-      dashboardList.innerHTML = "<p style='opacity:.8;'>No hay casillas todavía.</p>";
+    if (!addBoxBtn || !dashboardList) {
+      console.log("Dashboard no encontrado en el HTML");
       return;
     }
 
-    dashboardItems.forEach((item, index) => {
-      const box = document.createElement("div");
-      box.className = "dashboard-box";
+    const STORAGE_KEY = "dashboard_torneo_items_v1";
+    let dashboardItems = [];
 
-      if (item.editing) {
-        box.innerHTML = `
-          <input type="text" placeholder="Título" value="${item.title || ""}">
-          <textarea placeholder="Contenido">${item.content || ""}</textarea>
-          <button class="btn-primary" type="button">Guardar</button>
-          <button type="button" style="background:orange;">Cancelar</button>
-          <button type="button" style="background:red; color:white;">Eliminar</button>
+    function loadDashboardItems() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        dashboardItems = saved ? JSON.parse(saved) : [];
+      } catch (error) {
+        dashboardItems = [];
+        console.error("Error cargando dashboard:", error);
+      }
+    }
+
+    function saveDashboardItems() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dashboardItems));
+      } catch (error) {
+        console.error("Error guardando dashboard:", error);
+      }
+    }
+
+    function escapeHtmlDashboard(text) {
+      const div = document.createElement("div");
+      div.textContent = text || "";
+      return div.innerHTML;
+    }
+
+    function createEmptyCard() {
+      return {
+        id: Date.now() + Math.random().toString(16).slice(2),
+        title: "",
+        content: "",
+        editing: true,
+        isNew: true,
+        backup: null
+      };
+    }
+
+    function renderDashboard() {
+      dashboardList.innerHTML = "";
+
+      if (!dashboardItems.length) {
+        dashboardList.innerHTML = `
+          <div class="dashboard-empty">
+            Aún no hay casillas creadas. Presiona <strong>+ Agregar casilla</strong>.
+          </div>
         `;
-
-        const titleInput = box.querySelector("input");
-        const contentInput = box.querySelector("textarea");
-        const saveBtn = box.querySelectorAll("button")[0];
-        const cancelBtn = box.querySelectorAll("button")[1];
-        const deleteBtn = box.querySelectorAll("button")[2];
-
-        titleInput.addEventListener("input", (e) => {
-          item.title = e.target.value;
-        });
-
-        contentInput.addEventListener("input", (e) => {
-          item.content = e.target.value;
-        });
-
-        saveBtn.addEventListener("click", () => {
-          item.editing = false;
-          saveDashboard();
-          renderDashboard();
-        });
-
-        cancelBtn.addEventListener("click", () => {
-          if (item.isNew) {
-            dashboardItems.splice(index, 1);
-          } else {
-            item.editing = false;
-          }
-          saveDashboard();
-          renderDashboard();
-        });
-
-        deleteBtn.addEventListener("click", () => {
-          dashboardItems.splice(index, 1);
-          saveDashboard();
-          renderDashboard();
-        });
-
-      } else {
-        box.innerHTML = `
-          <h3>${item.title || "Sin título"}</h3>
-          <p>${item.content || "Sin contenido"}</p>
-          <button type="button" style="background:green; color:white;">Editar</button>
-          <button type="button" style="background:red; color:white;">Eliminar</button>
-        `;
-
-        const editBtn = box.querySelectorAll("button")[0];
-        const deleteBtn = box.querySelectorAll("button")[1];
-
-        editBtn.addEventListener("click", () => {
-          item.editing = true;
-          saveDashboard();
-          renderDashboard();
-        });
-
-        deleteBtn.addEventListener("click", () => {
-          dashboardItems.splice(index, 1);
-          saveDashboard();
-          renderDashboard();
-        });
+        return;
       }
 
-      dashboardList.appendChild(box);
-    });
-  }
+      dashboardItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "dashboard-card";
 
-  addBoxBtn.addEventListener("click", () => {
-    dashboardItems.unshift({
-      title: "",
-      content: "",
-      editing: true,
-      isNew: true
+        if (item.editing) {
+          card.innerHTML = `
+            <input
+              type="text"
+              class="dashboard-input-title"
+              placeholder="Título de la casilla"
+              value="${escapeHtmlDashboard(item.title)}"
+            />
+
+            <textarea
+              class="dashboard-input-content"
+              placeholder="Escribe aquí el contenido...">${escapeHtmlDashboard(item.content)}</textarea>
+
+            <div class="dashboard-actions">
+              <button type="button" class="dashboard-btn dashboard-btn-save">Guardar</button>
+              <button type="button" class="dashboard-btn dashboard-btn-cancel">Cancelar</button>
+              <button type="button" class="dashboard-btn dashboard-btn-delete">Eliminar</button>
+            </div>
+          `;
+
+          const titleInput = card.querySelector(".dashboard-input-title");
+          const contentInput = card.querySelector(".dashboard-input-content");
+          const saveBtn = card.querySelector(".dashboard-btn-save");
+          const cancelBtn = card.querySelector(".dashboard-btn-cancel");
+          const deleteBtn = card.querySelector(".dashboard-btn-delete");
+
+          titleInput.addEventListener("input", (e) => {
+            item.title = e.target.value;
+          });
+
+          contentInput.addEventListener("input", (e) => {
+            item.content = e.target.value;
+          });
+
+          saveBtn.addEventListener("click", () => {
+            item.editing = false;
+            item.isNew = false;
+            item.backup = null;
+            saveDashboardItems();
+            renderDashboard();
+          });
+
+          cancelBtn.addEventListener("click", () => {
+            if (item.isNew) {
+              dashboardItems = dashboardItems.filter((x) => x.id !== item.id);
+            } else if (item.backup) {
+              item.title = item.backup.title;
+              item.content = item.backup.content;
+              item.editing = false;
+              item.backup = null;
+            } else {
+              item.editing = false;
+            }
+
+            saveDashboardItems();
+            renderDashboard();
+          });
+
+          deleteBtn.addEventListener("click", () => {
+            const confirmDelete = confirm("¿Seguro que quieres eliminar esta casilla?");
+            if (!confirmDelete) return;
+
+            dashboardItems = dashboardItems.filter((x) => x.id !== item.id);
+            saveDashboardItems();
+            renderDashboard();
+          });
+        } else {
+          card.innerHTML = `
+            <div class="dashboard-card-view-title">${escapeHtmlDashboard(item.title || "Sin título")}</div>
+            <div class="dashboard-card-view-content">${escapeHtmlDashboard(item.content || "Sin contenido")}</div>
+
+            <div class="dashboard-actions">
+              <button type="button" class="dashboard-btn dashboard-btn-edit">Editar</button>
+              <button type="button" class="dashboard-btn dashboard-btn-delete">Eliminar</button>
+            </div>
+          `;
+
+          const editBtn = card.querySelector(".dashboard-btn-edit");
+          const deleteBtn = card.querySelector(".dashboard-btn-delete");
+
+          editBtn.addEventListener("click", () => {
+            item.backup = {
+              title: item.title,
+              content: item.content
+            };
+            item.editing = true;
+            saveDashboardItems();
+            renderDashboard();
+          });
+
+          deleteBtn.addEventListener("click", () => {
+            const confirmDelete = confirm("¿Seguro que quieres eliminar esta casilla?");
+            if (!confirmDelete) return;
+
+            dashboardItems = dashboardItems.filter((x) => x.id !== item.id);
+            saveDashboardItems();
+            renderDashboard();
+          });
+        }
+
+        dashboardList.appendChild(card);
+      });
+    }
+
+    addBoxBtn.addEventListener("click", () => {
+      dashboardItems.unshift(createEmptyCard());
+      saveDashboardItems();
+      renderDashboard();
     });
-    saveDashboard();
+
+    loadDashboardItems();
     renderDashboard();
+    console.log("Dashboard cargado correctamente");
   });
-
-  renderDashboard();
-});
+})();
